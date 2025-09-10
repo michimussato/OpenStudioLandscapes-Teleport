@@ -25,7 +25,7 @@ from OpenStudioLandscapes.engine.enums import OpenStudioLandscapesConfig
 DOCKER_USE_CACHE = DOCKER_USE_CACHE_GLOBAL or False
 
 
-GROUP = "Template"
+GROUP = "Teleport"
 KEY = [GROUP]
 FEATURE = f"OpenStudioLandscapes-{GROUP}".replace("_", "-")
 
@@ -38,17 +38,17 @@ ASSET_HEADER = {
 FEATURE_CONFIGS = {
     OpenStudioLandscapesConfig.DEFAULT: {
         "DOCKER_USE_CACHE": DOCKER_USE_CACHE,
-        "ENV_VAR_PORT_HOST": "1234",
-        "ENV_VAR_PORT_CONTAINER": "4321",
-        f"EXTRA_FILE": pathlib.Path(
-            "{DOT_FEATURES}",
-            FEATURE,
-            ".payload",
-            "bin",
-            "extra.file",
-        )
-        .expanduser()
-        .as_posix(),
+        # "ENV_VAR_PORT_HOST": "1234",
+        # "ENV_VAR_PORT_CONTAINER": "4321",
+        # f"EXTRA_FILE": pathlib.Path(
+        #     "{DOT_FEATURES}",
+        #     FEATURE,
+        #     ".payload",
+        #     "bin",
+        #     "extra.file",
+        # )
+        # .expanduser()
+        # .as_posix(),
     }
 }
 # @formatter:on

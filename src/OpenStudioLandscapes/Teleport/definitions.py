@@ -3,15 +3,15 @@ from dagster import (
     load_assets_from_modules,
 )
 
-import OpenStudioLandscapes.Template.assets
-import OpenStudioLandscapes.Template.constants
+import OpenStudioLandscapes.Teleport.assets
+import OpenStudioLandscapes.Teleport.constants
 
 assets = load_assets_from_modules(
-    modules=[OpenStudioLandscapes.Template.assets],
+    modules=[OpenStudioLandscapes.Teleport.assets],
 )
 
 constants = load_assets_from_modules(
-    modules=[OpenStudioLandscapes.Template.constants],
+    modules=[OpenStudioLandscapes.Teleport.constants],
 )
 
 
