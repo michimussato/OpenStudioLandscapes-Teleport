@@ -38,36 +38,44 @@ ASSET_HEADER = {
 FEATURE_CONFIGS = {
     OpenStudioLandscapesConfig.DEFAULT: {
         "DOCKER_USE_CACHE": DOCKER_USE_CACHE,
-        "DOCKER_IMAGE": "public.ecr.aws/gravitational/teleport-distroless:latest",
-        "PROXY_SERVICE_PORT_HOST": "443",
-        "PROXY_SERVICE_PORT_CONTAINER": "443",
-        # "PROXY_SERVICE_AGENTS_PORT_HOST": "3021",
-        # "PROXY_SERVICE_AGENTS_PORT_CONTAINER": "3021",
+        # :latest does not exist
+        # https://gallery.ecr.aws/gravitational
+        "DOCKER_IMAGE": "public.ecr.aws/gravitational/teleport-distroless-debug:18",
+        # "PROXY_SERVICE_PORT_HOST": "443",
+        # "PROXY_SERVICE_PORT_CONTAINER": "443",
+        # https://goteleport.com/docs/reference/networking/#auth-service-ports
         "PROXY_SERVICE_AGENTS_PORT_HOST": "3025",
         "PROXY_SERVICE_AGENTS_PORT_CONTAINER": "3025",
+        # https://goteleport.com/docs/reference/networking/#ports-without-tls-routing
         "WEB_UI_PORT_HOST": "3080",
         "WEB_UI_PORT_CONTAINER": "3080",
+        "ALL_CLIENTS_PORT_HOST": "3023",
+        "ALL_CLIENTS_PORT_CONTAINER": "3023",
         # "ENV_VAR_PORT_HOST": "1234",
         # "ENV_VAR_PORT_CONTAINER": "4321",
         f"TELEPORT_CONFIG": pathlib.Path(
-            "{DOT_FEATURES}",
-            FEATURE,
+            "{DOT_LANDSCAPES}",
+            "{LANDSCAPE}",
+            f"{GROUP}__{'__'.join(KEY)}",
             "volumes",
             "config",
+            # "teleport.yaml",
         )
         .expanduser()
         .as_posix(),
         f"TELEPORT_DATA": pathlib.Path(
-            "{DOT_FEATURES}",
-            FEATURE,
+            "{DOT_LANDSCAPES}",
+            "{LANDSCAPE}",
+            f"{GROUP}__{'__'.join(KEY)}",
             "volumes",
             "data",
         )
         .expanduser()
         .as_posix(),
         f"TELEPORT_CERT": pathlib.Path(
-            "{DOT_FEATURES}",
-            FEATURE,
+            "{DOT_LANDSCAPES}",
+            "{LANDSCAPE}",
+            f"{GROUP}__{'__'.join(KEY)}",
             "volumes",
             "crt",
         )
