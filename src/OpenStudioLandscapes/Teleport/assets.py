@@ -327,8 +327,23 @@ def compose_teleport(
     elif "network_mode" in compose_networks:
         network_dict = {"network_mode": compose_networks.get("network_mode")}
 
+    teleport_config = pathlib.Path(env["TELEPORT_CONFIG"])
+    teleport_config.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    teleport_data = pathlib.Path(env["TELEPORT_DATA"])
+    teleport_data.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
     volumes_dict = {
-        "volumes": [],
+        "volumes": [
+            f"{teleport_config.as_posix()}:/etc/teleport:rw",
+            f"{teleport_data.as_posix()}:/var/lib/teleport:rw",
+        ],
     }
 
     # For portability, convert absolute volume paths to relative paths
@@ -362,6 +377,11 @@ def compose_teleport(
     container_name = "--".join([service_name, env.get("LANDSCAPE", "default")])
     host_name = ".".join([service_name, env["ROOT_DOMAIN"]])
 
+    # teleport configure to create certs:
+    # docker run --hostname ${host_name} --rm \
+    #   --entrypoint=/usr/local/bin/teleport \
+    #   public.ecr.aws/gravitational/teleport-distroless:latest configure --roles=proxy,auth > teleport_config / teleport.yaml
+
     docker_dict = {
         "services": {
             service_name: {
@@ -370,8 +390,7 @@ def compose_teleport(
                 "domainname": env.get("ROOT_DOMAIN"),
                 # "mac_address": ":".join(re.findall(r"..", env["HOST_ID"])),
                 "restart": "always",
-                "image": "${DOT_OVERRIDES_REGISTRY_NAMESPACE:-docker.io/openstudiolandscapes}/%s:%s"
-                % (build["image_name"], build["image_tags"][0]),
+                "image": env["DOCKER_IMAGE"],
                 **copy.deepcopy(volumes_dict),
                 **copy.deepcopy(network_dict),
                 **copy.deepcopy(ports_dict),

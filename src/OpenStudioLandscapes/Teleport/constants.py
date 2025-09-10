@@ -38,17 +38,41 @@ ASSET_HEADER = {
 FEATURE_CONFIGS = {
     OpenStudioLandscapesConfig.DEFAULT: {
         "DOCKER_USE_CACHE": DOCKER_USE_CACHE,
+        "DOCKER_IMAGE": "public.ecr.aws/gravitational/teleport-distroless:latest",
+        "PROXY_SERVICE_PORT_HOST": "443",
+        "PROXY_SERVICE_PORT_CONTAINER": "443",
+        # "PROXY_SERVICE_AGENTS_PORT_HOST": "3021",
+        # "PROXY_SERVICE_AGENTS_PORT_CONTAINER": "3021",
+        "PROXY_SERVICE_AGENTS_PORT_HOST": "3025",
+        "PROXY_SERVICE_AGENTS_PORT_CONTAINER": "3025",
+        "WEB_UI_PORT_HOST": "3080",
+        "WEB_UI_PORT_CONTAINER": "3080",
         # "ENV_VAR_PORT_HOST": "1234",
         # "ENV_VAR_PORT_CONTAINER": "4321",
-        # f"EXTRA_FILE": pathlib.Path(
-        #     "{DOT_FEATURES}",
-        #     FEATURE,
-        #     ".payload",
-        #     "bin",
-        #     "extra.file",
-        # )
-        # .expanduser()
-        # .as_posix(),
+        f"TELEPORT_CONFIG": pathlib.Path(
+            "{DOT_FEATURES}",
+            FEATURE,
+            "volumes",
+            "config",
+        )
+        .expanduser()
+        .as_posix(),
+        f"TELEPORT_DATA": pathlib.Path(
+            "{DOT_FEATURES}",
+            FEATURE,
+            "volumes",
+            "data",
+        )
+        .expanduser()
+        .as_posix(),
+        f"TELEPORT_CERT": pathlib.Path(
+            "{DOT_FEATURES}",
+            FEATURE,
+            "volumes",
+            "crt",
+        )
+        .expanduser()
+        .as_posix(),
     }
 }
 # @formatter:on
