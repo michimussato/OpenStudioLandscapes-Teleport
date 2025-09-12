@@ -1,9 +1,6 @@
 import copy
 import json
 import pathlib
-import textwrap
-import time
-import urllib.parse
 from typing import Any, Generator
 
 import yaml
@@ -32,7 +29,6 @@ from OpenStudioLandscapes.engine.common_assets.group_out import get_group_out
 from OpenStudioLandscapes.engine.constants import *
 from OpenStudioLandscapes.engine.enums import *
 from OpenStudioLandscapes.engine.utils import *
-from OpenStudioLandscapes.engine.utils.docker import *
 
 from OpenStudioLandscapes.Teleport.constants import *
 
@@ -90,14 +86,20 @@ docker_config_json = get_docker_config_json(
 
 @asset(
     **ASSET_HEADER,
+    ins={
+        "env": AssetIn(
+            AssetKey([*ASSET_HEADER["key_prefix"], "env"]),
+        ),
+    },
 )
 def compose_networks(
     context: AssetExecutionContext,
+    env: dict,  # pylint: disable=redefined-outer-name
 ) -> Generator[
     Output[dict[str, dict[str, dict[str, str]]]] | AssetMaterialization, None, None
 ]:
 
-    compose_network_mode = ComposeNetworkMode.DEFAULT
+    compose_network_mode = ComposeNetworkMode(env["COMPOSE_NETWORK_MODE"])
 
     if compose_network_mode == ComposeNetworkMode.DEFAULT:
         docker_dict = {
@@ -190,6 +192,7 @@ def teleport_yaml(
     # - docker exec -ti teleport--<landscape_id> busybox sh
 
     # Create User:
+    # docker ps
     # TELEPORT_CONTAINER_ID_OR_NAME="a3a99558b9bb0a63cadf6da64e1ff8d24a7bbf5d50883e18dbb312afc13e07bc"
     # docker exec ${TELEPORT_CONTAINER_ID_OR_NAME} tctl users add admin --roles=editor,access --logins=root,ubuntu,ec2-user
 
@@ -393,6 +396,18 @@ def compose_teleport(
                 # "mac_address": ":".join(re.findall(r"..", env["HOST_ID"])),
                 "restart": "always",
                 "image": env["DOCKER_IMAGE"],
+                # https://docs.docker.com/reference/compose-file/services/#extra_hosts
+                # docker exec ${TELEPORT_CONTAINER_ID_OR_NAME} cat /etc/hosts
+                # 127.0.0.1       localhost
+                # ::1     localhost ip6-localhost ip6-loopback
+                # fe00::  ip6-localnet
+                # ff00::  ip6-mcastprefix
+                # ff02::1 ip6-allnodes
+                # ff02::2 ip6-allrouters
+                # 172.17.0.1      teleport.cloud-ip.cc
+                "extra_hosts":[
+                    "teleport.cloud-ip.cc:host-gateway",
+                ],
                 **copy.deepcopy(volumes_dict),
                 **copy.deepcopy(network_dict),
                 **copy.deepcopy(ports_dict),

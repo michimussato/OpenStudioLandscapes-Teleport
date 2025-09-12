@@ -20,7 +20,7 @@ from dagster import (
 LOGGER = get_dagster_logger(__name__)
 
 from OpenStudioLandscapes.engine.constants import DOCKER_USE_CACHE_GLOBAL
-from OpenStudioLandscapes.engine.enums import OpenStudioLandscapesConfig
+from OpenStudioLandscapes.engine.enums import OpenStudioLandscapesConfig, ComposeNetworkMode
 
 DOCKER_USE_CACHE = DOCKER_USE_CACHE_GLOBAL or False
 
@@ -38,6 +38,7 @@ ASSET_HEADER = {
 FEATURE_CONFIGS = {
     OpenStudioLandscapesConfig.DEFAULT: {
         "DOCKER_USE_CACHE": DOCKER_USE_CACHE,
+        "COMPOSE_NETWORK_MODE": ComposeNetworkMode.HOST,
         # :latest does not exist
         # https://gallery.ecr.aws/gravitational
         "DOCKER_IMAGE": "public.ecr.aws/gravitational/teleport-distroless-debug:18",
