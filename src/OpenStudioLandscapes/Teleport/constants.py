@@ -5,7 +5,7 @@ __all__ = [
 ]
 
 import pathlib
-from typing import Any, Generator, MutableMapping
+from typing import Any, Generator
 
 from dagster import (
     AssetExecutionContext,
@@ -42,29 +42,32 @@ FEATURE_CONFIGS = {
         # :latest does not exist
         # https://gallery.ecr.aws/gravitational
         "DOCKER_IMAGE": "public.ecr.aws/gravitational/teleport-distroless-debug:18",
-        # "PROXY_SERVICE_PORT_HOST": "443",
-        # "PROXY_SERVICE_PORT_CONTAINER": "443",
         # https://goteleport.com/docs/reference/networking/#auth-service-ports
+        # auth Service:
         "PROXY_SERVICE_AGENTS_PORT_HOST": "3025",
         "PROXY_SERVICE_AGENTS_PORT_CONTAINER": "3025",
         # https://goteleport.com/docs/reference/networking/#ports-without-tls-routing
-        "WEB_UI_PORT_HOST": "3080",
-        "WEB_UI_PORT_CONTAINER": "3080",
+        "WEB_UI_PORT_HOST": "443",
+        "WEB_UI_PORT_CONTAINER": "443",
+        # proxy Service:
         "ALL_CLIENTS_PORT_HOST": "3023",
         "ALL_CLIENTS_PORT_CONTAINER": "3023",
-        # "ENV_VAR_PORT_HOST": "1234",
-        # "ENV_VAR_PORT_CONTAINER": "4321",
-        f"TELEPORT_CONFIG": pathlib.Path(
+        "TELEPORT_CONFIG": pathlib.Path(
             "{DOT_LANDSCAPES}",
             "{LANDSCAPE}",
             f"{GROUP}__{'__'.join(KEY)}",
             "volumes",
             "config",
-            # "teleport.yaml",
         )
         .expanduser()
         .as_posix(),
-        f"TELEPORT_DATA": pathlib.Path(
+        "ACME_SH_DIR": pathlib.Path(
+            "{DOT_LANDSCAPES}",
+            ".acme.sh",
+        )
+        .expanduser()
+        .as_posix(),
+        "TELEPORT_DATA": pathlib.Path(
             "{DOT_LANDSCAPES}",
             "{LANDSCAPE}",
             f"{GROUP}__{'__'.join(KEY)}",
@@ -73,15 +76,30 @@ FEATURE_CONFIGS = {
         )
         .expanduser()
         .as_posix(),
-        f"TELEPORT_CERT": pathlib.Path(
-            "{DOT_LANDSCAPES}",
-            "{LANDSCAPE}",
-            f"{GROUP}__{'__'.join(KEY)}",
-            "volumes",
-            "crt",
-        )
-        .expanduser()
-        .as_posix(),
+        "TELEPORT_CERT": {
+            #################################################################
+            # Certificates directory
+            #################################################################
+            #################################################################
+            # Inside Landscape:
+            "default": pathlib.Path(
+                "{DOT_LANDSCAPES}",
+                "{LANDSCAPE}",
+                ".acme.sh",
+                "certs",
+            )
+            .expanduser()
+            .as_posix(),
+            #################################################################
+            # In Landscapes root dir:
+            "landscapes_root": pathlib.Path(
+                "{DOT_LANDSCAPES}",
+                ".acme.sh",
+                "certs",
+            )
+            .expanduser()
+            .as_posix(),
+        }["landscapes_root"],
     }
 }
 # @formatter:on
