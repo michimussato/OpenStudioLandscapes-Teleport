@@ -2,6 +2,7 @@ __all__ = [
     "DOCKER_USE_CACHE",
     "ASSET_HEADER",
     "FEATURE_CONFIGS",
+    "SERVICE_NAME",
 ]
 
 import pathlib
@@ -28,6 +29,7 @@ DOCKER_USE_CACHE = DOCKER_USE_CACHE_GLOBAL or False
 GROUP = "Teleport"
 KEY = [GROUP]
 FEATURE = f"OpenStudioLandscapes-{GROUP}".replace("_", "-")
+SERVICE_NAME = GROUP.lower()
 
 ASSET_HEADER = {
     "group_name": GROUP,

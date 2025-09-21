@@ -207,14 +207,15 @@ def certificates(
     for cert_dir in acme_sh_dir.iterdir():
         tld = cert_dir.name
         context.log.warning(tld)
-        dir_ = pathlib.Path(cert_dir, "certs", f"{tld}_ecc")
-        fullchain = pathlib.Path(cert_dir, "certs", f"{tld}_ecc", "fullchain.cer")
-        key = pathlib.Path(cert_dir, "certs", f"{tld}_ecc", f"{tld}.key")
+        dir_ = pathlib.Path("certs", f"{tld}_ecc")
+        fullchain = "fullchain.cer"
+        key = f"{tld}.key"
         cert_dir_dict = {
+            "certs_root": cert_dir.as_posix(),
             "tld": tld,
-            "dir": dir_.as_posix(),
-            "fullchain": fullchain.as_posix(),
-            "key": key.as_posix(),
+            "certs_subdir": dir_.as_posix(),
+            "fullchain": fullchain,  # aka cert_file
+            "key": key,  # aka key_file
         }
         context.log.warning(cert_dir)
         cert_dirs.append(cert_dir_dict)
@@ -235,17 +236,21 @@ def certificates(
         "env": AssetIn(
             AssetKey([*ASSET_HEADER["key_prefix"], "env"]),
         ),
+        "certificates": AssetIn(
+            AssetKey([*ASSET_HEADER["key_prefix"], "certificates"]),
+        ),
     },
     description="",
 )
 def teleport_yaml(
     context: AssetExecutionContext,
     env: dict,  # pylint: disable=redefined-outer-name
+    certificates: list[dict],  # pylint: disable=redefined-outer-name
 ) -> Generator[Output[pathlib.Path] | AssetMaterialization, None, None]:
     """
     """
 
-    service_name = "teleport"
+    service_name = SERVICE_NAME
     # container_name = "--".join([service_name, env.get("LANDSCAPE", "default")])
     host_name = ".".join([service_name, env["ROOT_DOMAIN"]])
 
@@ -311,6 +316,10 @@ def teleport_yaml(
     # # using exposed port is not working yet...
     # # teleport configure --output=$HOME/.config/teleport/app_config.yaml --app-name=kitsu --app-uri=http://localhost:4545/ --roles=app --token=b7bfd56f9fc56bc8a7c0a2a336ba7d47 --proxy=teleport.evil-farmer.cloud-ip.cc:443 --data-dir=$HOME/.config/teleport
     # # But using the direct docker IP: BAM!
+    # Todo:
+    #  - [ ] Try with local IP and exposed port
+    #  - [ ] Try with loopback IP and exposed port
+    #  - [ ] make sure teleport start runs automatically somewhere
     # teleport configure --output=$HOME/.config/teleport/app_config.yaml --app-name=kitsu --app-uri=http://172.25.0.2/ --roles=app --token=b7bfd56f9fc56bc8a7c0a2a336ba7d47 --proxy=teleport.evil-farmer.cloud-ip.cc:443 --data-dir=$HOME/.config/teleport
     # teleport start --config=$HOME/.config/teleport/app_config.yaml
     #
@@ -378,6 +387,16 @@ def teleport_yaml(
     #
     # teleport start --config="/root/.config/teleport/app_config.yaml" --insecure
 
+    https_keypairs = []
+
+    for cert_dict in certificates:
+        https_keypairs.append(
+            {
+                "key_file": f"/{cert_dict['certs_subdir']}/{cert_dict['fullchain']}",
+                "cert_file": f"/{cert_dict['certs_subdir']}/{cert_dict['key']}",
+            }
+        )
+
     teleport_yaml_dict = {
         "version": "v3",
         # https://github.com/gravitational/teleport/discussions/25318
@@ -412,18 +431,12 @@ def teleport_yaml(
         },
         "proxy_service": {
             "enabled": True,
-            "https_keypairs": [
-                # Todo:
-                #  - [ ] implement dynamic solution
-                {
-                    "key_file": "/certs/evil-farmer.cloud-ip.cc_ecc/evil-farmer.cloud-ip.cc.key",
-                    "cert_file": "/certs/evil-farmer.cloud-ip.cc_ecc/fullchain.cer",
-                },
-                {
-                    "key_file": "/certs/openstudiolandscapes.cloud-ip.cc_ecc/openstudiolandscapes.cloud-ip.cc.key",
-                    "cert_file": "/certs/openstudiolandscapes.cloud-ip.cc_ecc/fullchain.cer",
-                },
-            ],
+            # Basic structure of https_keypairs:
+            # [{
+            #     "key_file": "/certs/evil-farmer.cloud-ip.cc_ecc/evil-farmer.cloud-ip.cc.key",
+            #     "cert_file": "/certs/evil-farmer.cloud-ip.cc_ecc/fullchain.cer",
+            # }],
+            "https_keypairs": https_keypairs,
             "https_keypairs_reload_interval": "120s",
             # acme uses TLS_ALPN-01 challenge and does not seem to be able to handle
             # DNS-01 challenges nor can we specify custom domains manually so this
@@ -553,8 +566,8 @@ def compose_teleport(
     for cert_dict in certificates:
         volumes_dict["volumes"].extend(
             [
-                f"{cert_dict['fullchain']}:/certs/{cert_dict['tld']}_ecc/fullchain.cer:ro",
-                f"{cert_dict['key']}:/certs/{cert_dict['tld']}_ecc/{cert_dict['tld']}.key:ro",
+                f"{cert_dict['certs_root']}/{cert_dict['certs_subdir']}/{cert_dict['fullchain']}:/{cert_dict['certs_subdir']}/{cert_dict['fullchain']}:ro",
+                f"{cert_dict['certs_root']}/{cert_dict['certs_subdir']}/{cert_dict['key']}:/{cert_dict['certs_subdir']}/{cert_dict['key']}:ro",
             ]
         )
 
@@ -585,7 +598,7 @@ def compose_teleport(
 
     command = []
 
-    service_name = "teleport"
+    service_name = SERVICE_NAME
     container_name = "--".join([service_name, env.get("LANDSCAPE", "default")])
     host_name = ".".join([service_name, env["ROOT_DOMAIN"]])
 
@@ -626,26 +639,13 @@ def compose_teleport(
                     "start",
                     "-c",
                     "/etc/teleport/teleport.yaml",
-                    "--insecure",
+                    # "--insecure",
                 ]
             },
         },
     }
 
     docker_yaml = yaml.dump(docker_dict)
-
-    teleport_create_admin_cmd = [
-        # i.e.: https://tomerklein.dev/setting-up-teleport-for-secure-server-access-d4d317c1c4ca
-        shutil.which("docker"),
-        "exec",
-        container_name,
-        "tctl",
-        "users",
-        "add",
-        "admin",
-        "--roles=editor,access",
-        "--logins=root,ubuntu,ec2-user",
-    ]
 
     yield Output(docker_dict)
 
@@ -654,7 +654,6 @@ def compose_teleport(
         metadata={
             "__".join(context.asset_key.path): MetadataValue.json(docker_dict),
             "docker_yaml": MetadataValue.md(f"```yaml\n{docker_yaml}\n```"),
-            "teleport_create_admin_cmd": MetadataValue.path(shlex.join(teleport_create_admin_cmd)),
             # Todo: "cmd_docker_run": MetadataValue.path(cmd_list_to_str(cmd_docker_run)),
         },
     )
@@ -1078,5 +1077,54 @@ def cmd_append(
         asset_key=context.asset_key,
         metadata={
             "__".join(context.asset_key.path): MetadataValue.json(ret),
+        },
+    )
+
+
+@asset(
+    **ASSET_HEADER,
+    ins={
+        "compose_teleport": AssetIn(
+            AssetKey([*ASSET_HEADER["key_prefix"], "compose_teleport"]),
+        ),
+    },
+)
+def cmd_create_teleport_admin(
+    context: AssetExecutionContext,
+    compose_teleport: dict,  # pylint: disable=redefined-outer-name
+) -> Generator[Output[dict[str, list[Any]]] | AssetMaterialization | Any, Any, None]:
+    """
+    A fresh Teleport Docker instance comes with no admin user pre-configured.
+    This command needs to be executed one time once the container is up.
+    An invitation link will be printed which you'll have to follow.
+
+    More info here (section "User Setup"):
+
+    https://tomerklein.dev/setting-up-teleport-for-secure-server-access-d4d317c1c4ca
+    """
+
+    context.log.info(compose_teleport.keys())
+
+    container_name = compose_teleport["services"]["teleport"]["container_name"]
+
+    teleport_create_admin_cmd = [
+        # i.e.: https://tomerklein.dev/setting-up-teleport-for-secure-server-access-d4d317c1c4ca
+        shutil.which("docker"),
+        "exec",
+        container_name,
+        "tctl",
+        "users",
+        "add",
+        "admin",
+        "--roles=editor,access",
+        "--logins=root,ubuntu,ec2-user",
+    ]
+
+    yield Output(teleport_create_admin_cmd)
+
+    yield AssetMaterialization(
+        asset_key=context.asset_key,
+        metadata={
+            "__".join(context.asset_key.path): MetadataValue.path(shlex.join(teleport_create_admin_cmd)),
         },
     )
