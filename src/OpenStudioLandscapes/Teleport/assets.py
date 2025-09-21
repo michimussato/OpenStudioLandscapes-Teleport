@@ -307,7 +307,7 @@ def teleport_yaml(
     # Visit https://goteleport.com/docs/installation/linux/#package-repositories
     # and perform "Teleport Community Edition" Setup
     #
-    # sudo apt install -y nano
+    # sudo apt install -y nano netcat
     #
     # go to Enroll a New Resource: Web Application
     # copy/paste (make sure to specify correct port in --app-uri
@@ -317,11 +317,54 @@ def teleport_yaml(
     # # teleport configure --output=$HOME/.config/teleport/app_config.yaml --app-name=kitsu --app-uri=http://localhost:4545/ --roles=app --token=b7bfd56f9fc56bc8a7c0a2a336ba7d47 --proxy=teleport.evil-farmer.cloud-ip.cc:443 --data-dir=$HOME/.config/teleport
     # # But using the direct docker IP: BAM!
     # Todo:
-    #  - [ ] Try with local IP and exposed port
-    #  - [ ] Try with loopback IP and exposed port
+    #  - [x] Try with local IP (wlp0s20f3,  192.168.178.195:4545) and exposed port
+    #        $ nc -vz 192.168.178.195 4545
+    #        Connection to 192.168.178.195 4545 port [tcp/*] succeeded!
+    #  - [x] Try with hostname (kitsu.farm.evil:80) and exposed port
+    #        $ nc -vz kitsu.farm.evil 80
+    #        Connection to kitsu.farm.evil (172.20.0.2) 80 port [tcp/http] succeeded!
+    #  - [x] Try with loopback IP (127.0.0.1:4545) and exposed port
+    #        $ nc -vz 127.0.0.1 80
+    #        Connection to 127.0.0.1 80 port [tcp/http] succeeded!
+    #  - [x] Try with loopback IP (127.0.1.1:4545) and exposed port
+    #        $ nc -vz 127.0.1.1 80
+    #        Connection to 127.0.1.1 80 port [tcp/http] succeeded!
     #  - [ ] make sure teleport start runs automatically somewhere
     # teleport configure --output=$HOME/.config/teleport/app_config.yaml --app-name=kitsu --app-uri=http://172.25.0.2/ --roles=app --token=b7bfd56f9fc56bc8a7c0a2a336ba7d47 --proxy=teleport.evil-farmer.cloud-ip.cc:443 --data-dir=$HOME/.config/teleport
     # teleport start --config=$HOME/.config/teleport/app_config.yaml
+    #
+    # Teleport app service can run on any machine on the same network as kitsu, it seems.
+    # That would mean that we can just run one single docker container where the teleport start service is running on
+    # with multiple app_services
+    # [x] works!
+    # app_service:
+    #   enabled: "yes"
+    #   debug_app: false
+    #   mcp_demo_server: false
+    #   apps:
+    #   - name: ayon
+    #     uri: http://localhost:5005/
+    #     public_addr: ""
+    #     insecure_skip_verify: false
+    #     use_any_proxy_public_addr: false
+    #   - name: dagster
+    #     uri: http://localhost:3003/
+    #     public_addr: ""
+    #     insecure_skip_verify: false
+    #     use_any_proxy_public_addr: false
+    #   - name: kitsu
+    #     uri: http://localhost:4545/
+    #     public_addr: ""
+    #     insecure_skip_verify: false
+    #     use_any_proxy_public_addr: false
+    #
+    # Can the service also run on the same container like the proxy itself?
+    # Same config?
+    # [x] works!
+    #
+    # /etc/hosts is currently not empty.
+    # Todo:
+    #  - [ ] verify that it also works without hosts file
     #
     # Start over:
     # rm -rf ${HOME}/.config/teleport
@@ -392,8 +435,8 @@ def teleport_yaml(
     for cert_dict in certificates:
         https_keypairs.append(
             {
-                "key_file": f"/{cert_dict['certs_subdir']}/{cert_dict['fullchain']}",
-                "cert_file": f"/{cert_dict['certs_subdir']}/{cert_dict['key']}",
+                "cert_file": f"/{cert_dict['certs_subdir']}/{cert_dict['fullchain']}",
+                "key_file": f"/{cert_dict['certs_subdir']}/{cert_dict['key']}",
             }
         )
 
@@ -462,12 +505,47 @@ def teleport_yaml(
             "tunnel_listen_addr": "0.0.0.0:3024",
             "public_addr": [
                 # https://goteleport.com/docs/zero-trust-access/deploy-a-cluster/separate-proxy-service-endpoints/
-                # External FQDN
+                # External FQDN(s)
                 f"{service_name}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}:{env['WEB_UI_PORT_CONTAINER']}",
+                f"{service_name}.openstudiolandscapes.cloud-ip.cc:{env['WEB_UI_PORT_CONTAINER']}",
                 # Internal FQDN
                 f"{host_name}:{env['WEB_UI_PORT_CONTAINER']}",
             ],
         },
+        "app_service": {
+            "enabled": True,
+            "debug_app": False,
+            "mcp_demo_server": False,
+            "apps": [
+                {
+                    # Todo
+                    #  This does not resolve correctly yet:
+                    "name": "ayon",
+                    # For now it's "server", not "ayon"
+                    "uri": "http://server.farm.evil:5005/",
+                    # "uri": "http://localhost:5005/",
+                    "public_addr": "",
+                    "insecure_skip_verify": False,
+                    "use_any_proxy_public_addr": False,
+                },
+                {
+                    "name": "dagster",
+                    "uri": "http://dagster.farm.evil:3003/",
+                    # "uri": "http://localhost:3003/",
+                    "public_addr": "",
+                    "insecure_skip_verify": False,
+                    "use_any_proxy_public_addr": False,
+                },
+                {
+                    "name": "kitsu",
+                    "uri": "http://kitsu.farm.evil:4545/",
+                    # "uri": "http://localhost:4545/",
+                    "public_addr": "",
+                    "insecure_skip_verify": False,
+                    "use_any_proxy_public_addr": False,
+                },
+            ]
+        }
     }
 
     teleport_yaml_script = pathlib.Path(env["TELEPORT_CONFIG"], "teleport.yaml")
