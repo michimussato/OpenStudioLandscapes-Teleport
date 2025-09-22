@@ -102,6 +102,50 @@ FEATURE_CONFIGS = {
             .expanduser()
             .as_posix(),
         }["landscapes_root"],
+        # Todo:
+        #  - [ ] find a dynamic way to fetch all services with the correct ports etc.
+        #
+        # Todo:
+        #  - [x] Try with local IP (wlp0s20f3,  192.168.178.195:4545) and exposed port
+        #        $ nc -vz 192.168.178.195 4545
+        #        Connection to 192.168.178.195 4545 port [tcp/*] succeeded!
+        #  - [x] Try with hostname (kitsu.farm.evil:80) and exposed port
+        #        $ nc -vz kitsu.farm.evil 80
+        #        Connection to kitsu.farm.evil (172.20.0.2) 80 port [tcp/http] succeeded!
+        #  - [x] Try with loopback IP (127.0.0.1:80) and exposed port
+        #        $ nc -vz 127.0.0.1 80
+        #        Connection to 127.0.0.1 80 port [tcp/http] succeeded!
+        #  - [x] Try with loopback IP (127.0.1.1:80) and exposed port
+        #        $ nc -vz 127.0.1.1 80
+        #        Connection to 127.0.1.1 80 port [tcp/http] succeeded!
+        #  - [ ] make sure teleport start runs automatically somewhere
+        "TELEPORT_WEB_APPS": [
+            {
+                "name": "ayon",
+                # for ayon specifically, uri could be:
+                # "uri": "http://localhost:5005/",
+                # "uri": "http://server.farm.evil:5005/",
+                # "uri": "192.168.178.195:5005/",
+                "uri": "http://localhost:5005/",
+                "insecure_skip_verify": False,
+                "public_addr": "",
+                "use_any_proxy_public_addr": False,
+            },
+            {
+                "name": "dagster",
+                "uri": "http://localhost:3003/",
+                "insecure_skip_verify": False,
+                "public_addr": "",
+                "use_any_proxy_public_addr": False,
+            },
+            {
+                "name": "kitsu",
+                "uri": "http://localhost:4545/",
+                "insecure_skip_verify": False,
+                "public_addr": "",
+                "use_any_proxy_public_addr": False,
+            },
+        ]
     }
 }
 # @formatter:on

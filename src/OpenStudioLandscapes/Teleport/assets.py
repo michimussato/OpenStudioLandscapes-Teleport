@@ -252,7 +252,13 @@ def teleport_yaml(
 
     service_name = SERVICE_NAME
     # container_name = "--".join([service_name, env.get("LANDSCAPE", "default")])
-    host_name = ".".join([service_name, env["ROOT_DOMAIN"]])
+    host_name_lan = ".".join([service_name, env["ROOT_DOMAIN"]])
+    host_name_wan = ".".join([service_name, env["OPENSTUDIOLANDSCAPES__DOMAIN_WAN"]])
+
+    host_name = [
+        host_name_lan,
+        host_name_wan,
+    ][1]
 
     # Reference:
     # #
@@ -516,35 +522,7 @@ def teleport_yaml(
             "enabled": True,
             "debug_app": False,
             "mcp_demo_server": False,
-            "apps": [
-                {
-                    # Todo
-                    #  This does not resolve correctly yet:
-                    "name": "ayon",
-                    # For now it's "server", not "ayon"
-                    "uri": "http://server.farm.evil:5005/",
-                    # "uri": "http://localhost:5005/",
-                    "public_addr": "",
-                    "insecure_skip_verify": False,
-                    "use_any_proxy_public_addr": False,
-                },
-                {
-                    "name": "dagster",
-                    "uri": "http://dagster.farm.evil:3003/",
-                    # "uri": "http://localhost:3003/",
-                    "public_addr": "",
-                    "insecure_skip_verify": False,
-                    "use_any_proxy_public_addr": False,
-                },
-                {
-                    "name": "kitsu",
-                    "uri": "http://kitsu.farm.evil:4545/",
-                    # "uri": "http://localhost:4545/",
-                    "public_addr": "",
-                    "insecure_skip_verify": False,
-                    "use_any_proxy_public_addr": False,
-                },
-            ]
+            "apps": env.get("TELEPORT_WEB_APPS", []),
         }
     }
 
