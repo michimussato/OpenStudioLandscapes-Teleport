@@ -255,10 +255,17 @@ def teleport_yaml(
     host_name_lan = ".".join([service_name, env["ROOT_DOMAIN"]])
     host_name_wan = ".".join([service_name, env["OPENSTUDIOLANDSCAPES__DOMAIN_WAN"]])
 
-    host_name = [
-        host_name_lan,
+    host_names = [
+        # Todo
+        #  - [ ] separate lan domain(s) and wan domain(s)
+        # the order matters here.
+        # first: wan, secondary wan etc.
+        # then: lan
         host_name_wan,
-    ][1]
+        host_name_lan,
+    ]
+
+    host_name = host_names[0]
 
     # Reference:
     # #
@@ -512,10 +519,11 @@ def teleport_yaml(
             "public_addr": [
                 # https://goteleport.com/docs/zero-trust-access/deploy-a-cluster/separate-proxy-service-endpoints/
                 # External FQDN(s)
-                f"{service_name}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}:{env['WEB_UI_PORT_CONTAINER']}",
-                f"{service_name}.openstudiolandscapes.cloud-ip.cc:{env['WEB_UI_PORT_CONTAINER']}",
+                *[f"{i}:{env['WEB_UI_PORT_CONTAINER']}" for i in host_names]
+                # f"{service_name}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}:{env['WEB_UI_PORT_CONTAINER']}",
+                # f"{service_name}.openstudiolandscapes.cloud-ip.cc:{env['WEB_UI_PORT_CONTAINER']}",
                 # Internal FQDN
-                f"{host_name}:{env['WEB_UI_PORT_CONTAINER']}",
+                # f"{host_name}:{env['WEB_UI_PORT_CONTAINER']}",
             ],
         },
         "app_service": {
