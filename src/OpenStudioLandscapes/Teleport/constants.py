@@ -120,6 +120,19 @@ FEATURE_CONFIGS = {
         #        Connection to 127.0.1.1 80 port [tcp/http] succeeded!
         #  - [ ] make sure teleport start runs automatically somewhere
         "TELEPORT_WEB_APPS": [
+            # {
+            #     "name": "harbor",
+            #     "uri": "http://localhost:80/",
+            #     "insecure_skip_verify": False,
+            #     "public_addr": "harbor.teleport.openstudiolandscapes.cloud-ip.cc",
+            #     "use_any_proxy_public_addr": False,
+            #     "rewrite": {
+            #         "redirect": [
+            #             "localhost",
+            #             f"harbor.farm.evil",
+            #         ],
+            #     }
+            # },
             {
                 "name": "ayon",
                 # for ayon specifically, uri could be:
@@ -128,22 +141,40 @@ FEATURE_CONFIGS = {
                 # "uri": "192.168.178.195:5005/",
                 "uri": "http://localhost:5005/",
                 "insecure_skip_verify": False,
-                "public_addr": "",
+                "public_addr": "ayon.teleport.openstudiolandscapes.cloud-ip.cc",
                 "use_any_proxy_public_addr": False,
+                "rewrite": {
+                    "redirect": [
+                        "localhost",
+                        f"ayon.farm.evil",
+                    ],
+                }
             },
             {
                 "name": "dagster",
                 "uri": "http://localhost:3003/",
                 "insecure_skip_verify": False,
-                "public_addr": "",
+                "public_addr": "dagster.teleport.openstudiolandscapes.cloud-ip.cc",
                 "use_any_proxy_public_addr": False,
+                "rewrite": {
+                    "redirect": [
+                        "localhost",
+                        f"dagster.farm.evil",
+                    ],
+                }
             },
             {
                 "name": "kitsu",
                 "uri": "http://localhost:4545/",
                 "insecure_skip_verify": False,
-                "public_addr": "",
+                "public_addr": "kitsu.teleport.openstudiolandscapes.cloud-ip.cc",
                 "use_any_proxy_public_addr": False,
+                "rewrite": {
+                    "redirect": [
+                        "localhost",
+                        f"kitsu.farm.evil",
+                    ],
+                }
             },
         ]
     }
