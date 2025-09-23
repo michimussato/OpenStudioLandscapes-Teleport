@@ -54,6 +54,9 @@ FEATURE_CONFIGS = {
         # proxy Service:
         "ALL_CLIENTS_PORT_HOST": "3023",
         "ALL_CLIENTS_PORT_CONTAINER": "3023",
+        # ssh_service
+        "LISTEN_ADDRESS_HOST": "3022",
+        "LISTEN_ADDRESS_CONTAINER": "3022",
         "TELEPORT_CONFIG": pathlib.Path(
             "{DOT_LANDSCAPES}",
             "{LANDSCAPE}",

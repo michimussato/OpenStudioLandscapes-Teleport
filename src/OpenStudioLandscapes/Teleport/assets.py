@@ -3,7 +3,7 @@ import json
 import pathlib
 import shlex
 import shutil
-from typing import Any, Generator
+from typing import Any, Generator, List, MutableMapping
 
 import yaml
 from dagster import (
@@ -11,7 +11,6 @@ from dagster import (
     AssetIn,
     AssetKey,
     AssetMaterialization,
-    EnvVar,
     MetadataValue,
     Output,
     asset,
@@ -30,8 +29,10 @@ from OpenStudioLandscapes.engine.common_assets.feature_out import get_feature_ou
 from OpenStudioLandscapes.engine.common_assets.group_in import get_group_in
 from OpenStudioLandscapes.engine.common_assets.group_out import get_group_out
 from OpenStudioLandscapes.engine.constants import *
+from OpenStudioLandscapes.engine.discovery.discovery import *
 from OpenStudioLandscapes.engine.enums import *
 from OpenStudioLandscapes.engine.utils import *
+from OpenStudioLandscapes.engine.features import FEATURES
 
 from OpenStudioLandscapes.Teleport.constants import *
 
@@ -138,6 +139,127 @@ def compose_networks(
     )
 
 
+# Dynamic inputs based on the imported
+# third party code locations
+ins = {}
+feature_ins = {}
+for i in IMPORTED_FEATURES:
+    # ex: module = "OpenStudioLandscapes.Ayon.definitions"
+    module = i["module"]
+    compose_scope = i["compose_scope"]
+    if compose_scope != FEATURES["OpenStudioLandscapes-Teleport"]["compose_scope"]:
+        split = module.split(".")
+        key = split[1]  # key = "Ayon"
+        ins[f"{split[0]}_{split[1]}"] = AssetIn(AssetKey([key, "group_out"]))
+        feature_ins[f"{split[0]}_{split[1]}"] = AssetIn(AssetKey([key, "feature_out"]))
+
+
+@asset(
+    **ASSET_HEADER,
+    ins={
+        # "env": AssetIn(
+        #     AssetKey([*ASSET_HEADER["key_prefix"], "env"]),
+        # ),
+        # "group_out_base": AssetIn(
+        #     AssetKey([*ASSET_HEADER_BASE["key_prefix"], str(GroupIn.BASE_IN)])
+        # ),
+        **feature_ins,
+    },
+)
+def fetch_services(
+        context: AssetExecutionContext,
+        # env: dict,  # pylint: disable=redefined-outer-name
+        # group_out_base: dict,  # pylint: disable=redefined-outer-name
+        **kwargs,
+) -> Generator[
+    Output[MutableMapping[str, List[MutableMapping[str, List]]]]
+    | AssetMaterialization,
+    None,
+    None,
+]:
+    """ """
+
+    context.log.info(kwargs)
+
+    # env_base = group_out_base["env_base"]
+    # docker_config: DockerConfig = group_out_base["docker_config"]
+    # docker_config_json: pathlib.Path = group_out_base["docker_config_json"]
+
+    docker_compose_yaml: MutableMapping[str, str] = {}
+    docker_compose: MutableMapping[str, Any] = {}
+
+    envs_feature = {}
+
+    for k, v in kwargs.items():
+        # remove
+        # - env_base
+        # - constants_base
+        # - features
+        # - docker_config
+        # - docker_config_json
+        # from kwargs dicts
+        for d in [
+            "env_base",
+            "constants_base",
+            "features",
+            "docker_config",
+            "docker_config_json",
+            "compose",
+            "compose_yaml",
+            "group_in",
+        ]:
+            kwargs[k].pop(d)
+
+        teleport = {
+            "teleport_host": v.get("env", {}).get("TELEPORT_ENTRY_POINT_HOST", ""),
+            "teleport_port": v.get("env", {}).get("TELEPORT_ENTRY_POINT_PORT", ""),
+            "teleport_domain_lan": v.get("env", {}).get("ROOT_DOMAIN", ""),
+            "teleport_domain_wan": v.get("env", {}).get("OPENSTUDIOLANDSCAPES__DOMAIN_WAN", ""),
+        }
+
+        if not all(
+                [
+                    bool(teleport["teleport_host"]),
+                    bool(teleport["teleport_port"]),
+                ]
+            ):
+            # only add the service to the teleport.yaml if
+            # both teleport_host and teleport_port are specified
+            # Todo: for now ok
+            continue
+
+        teleport_expanded = expand_dict_vars(
+            dict_to_expand=teleport,
+            kv=v['env'],
+        )
+
+        envs_feature[k] = copy.deepcopy(teleport_expanded)
+
+    yield Output(envs_feature)
+
+    kwargs_serialized = copy.deepcopy(kwargs)
+
+    serialize_dict(
+        context=context,
+        d=kwargs_serialized,
+    )
+
+    yield AssetMaterialization(
+        asset_key=context.asset_key,
+        metadata={
+            "__".join(context.asset_key.path): MetadataValue.json(
+                envs_feature
+            ),
+            # "envs_feature": MetadataValue.json(envs_feature),
+            # "docker_compose": MetadataValue.json(docker_compose),
+            **metadatavalues_from_dict(
+                context=context,
+                d_serialized=kwargs_serialized,
+            ),
+        },
+    )
+
+
 # @asset(
 #     **ASSET_HEADER,
 #     ins={
@@ -239,6 +361,9 @@ def certificates(
         "certificates": AssetIn(
             AssetKey([*ASSET_HEADER["key_prefix"], "certificates"]),
         ),
+        "fetch_services": AssetIn(
+            AssetKey([*ASSET_HEADER["key_prefix"], "fetch_services"]),
+        ),
     },
     description="",
 )
@@ -246,6 +371,7 @@ def teleport_yaml(
     context: AssetExecutionContext,
     env: dict,  # pylint: disable=redefined-outer-name
     certificates: list[dict],  # pylint: disable=redefined-outer-name
+    fetch_services: dict,  # pylint: disable=redefined-outer-name
 ) -> Generator[Output[pathlib.Path] | AssetMaterialization, None, None]:
     """
     """
@@ -266,6 +392,36 @@ def teleport_yaml(
     ]
 
     host_name = host_names[0]
+
+    app_default_dict: dict = {
+        "name": "",
+        # for ayon specifically, uri could be:
+        # "uri": "http://localhost:5005/",
+        # "uri": "http://server.farm.evil:5005/",
+        # "uri": "192.168.178.195:5005/",
+        "uri": "",
+        "insecure_skip_verify": False,
+        "public_addr": "",
+        "use_any_proxy_public_addr": False,
+        "rewrite": {
+            "redirect": [
+                "localhost",
+            ],
+        }
+    }
+
+    apps: list[dict] = []
+
+    for feature, settings_teleport in fetch_services.items():
+        app_ = copy.deepcopy(app_default_dict)
+        app_["name"] = settings_teleport["teleport_host"]
+        app_["uri"] = f"http://localhost:{settings_teleport['teleport_port']}/"
+        app_["public_addr"] = f"{settings_teleport['teleport_host']}.{service_name}.{settings_teleport['teleport_domain_wan']}"
+        app_["rewrite"]["redirect"].append(
+            f"{settings_teleport['teleport_host']}.{settings_teleport['teleport_domain_lan']}"
+        )
+
+        apps.append(app_)
 
     # Reference:
     # #
@@ -457,6 +613,7 @@ def teleport_yaml(
         "version": "v3",
         # https://github.com/gravitational/teleport/discussions/25318
         "teleport": {
+            # https://goteleport.com/docs/reference/deployment/config/#instance-wide-settings
             "nodename": host_name,
             "data_dir": "/var/lib/teleport",
             "join_params": {
@@ -477,15 +634,32 @@ def teleport_yaml(
             "diag_addr": ""
         },
         "auth_service": {
+            # https://goteleport.com/docs/reference/deployment/config/#auth-service
             "enabled": "yes",
             # "listen_addr": f"0.0.0.0:{env['PROXY_SERVICE_AGENTS_PORT_CONTAINER']}",
             "listen_addr": f"0.0.0.0:3025",
             "proxy_listener_mode": "multiplex"
         },
+        # Server Access
+        # https://goteleport.com/docs/enroll-resources/server-access/getting-started/
         "ssh_service": {
-            "enabled": "no"
+            # https://goteleport.com/docs/reference/deployment/config/#ssh-service
+            "enabled": False,
+            # "listen_addr": f"0.0.0.0:{env['LISTEN_ADDRESS_HOST']}",
+            # # "listen_addr": f"192.168.178.195:22",
+            # "public_addr": [
+            #     # https://goteleport.com/docs/zero-trust-access/deploy-a-cluster/separate-proxy-service-endpoints/
+            #     # External FQDN(s)
+            #     *[f"{i}:{env['LISTEN_ADDRESS_HOST']}" for i in host_names]
+            #     # f"{service_name}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}:{env['WEB_UI_PORT_CONTAINER']}",
+            #     # f"{service_name}.openstudiolandscapes.cloud-ip.cc:{env['WEB_UI_PORT_CONTAINER']}",
+            #     # Internal FQDN
+            #     # f"{host_name}:{env['WEB_UI_PORT_CONTAINER']}",
+            # ],
+            # "ssh_file_copy": True,
         },
         "proxy_service": {
+            # https://goteleport.com/docs/reference/deployment/config/#proxy-service
             "enabled": True,
             # Basic structure of https_keypairs:
             # [{
@@ -527,11 +701,12 @@ def teleport_yaml(
             ],
         },
         "app_service": {
-            "enabled": True,
+            # https://goteleport.com/docs/reference/deployment/config/#application-service
+            "enabled": bool(apps),
             "debug_app": False,
             "mcp_demo_server": False,
-            "apps": env.get("TELEPORT_WEB_APPS", []),
-        }
+            "apps": apps,
+        },
     }
 
     teleport_yaml_script = pathlib.Path(env["TELEPORT_CONFIG"], "teleport.yaml")
