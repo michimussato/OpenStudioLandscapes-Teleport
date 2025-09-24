@@ -2,7 +2,7 @@
 
 ***
 
-1. [Feature: OpenStudioLandscapes-Template](#feature-openstudiolandscapes-template)
+1. [Feature: OpenStudioLandscapes-Teleport](#feature-openstudiolandscapes-teleport)
    1. [Brief](#brief)
    2. [Requirements](#requirements)
    3. [Install](#install)
@@ -21,7 +21,7 @@ This `README.md` was dynamically created with [OpenStudioLandscapesUtil-ReadmeGe
 
 ***
 
-# Feature: OpenStudioLandscapes-Template
+# Feature: OpenStudioLandscapes-Teleport
 
 ## Brief
 
@@ -43,7 +43,7 @@ Clone this repository into `OpenStudioLandscapes/.features`:
 ```shell
 
 # cd .features
-git clone https://github.com/michimussato/OpenStudioLandscapes-Template.git
+git clone https://github.com/michimussato/OpenStudioLandscapes-Teleport.git
 
 ```
 
@@ -51,7 +51,7 @@ Create `venv`:
 
 ```shell
 
-# cd .features/OpenStudioLandscapes-Template
+# cd .features/OpenStudioLandscapes-Teleport
 python3.11 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip setuptools
@@ -62,7 +62,7 @@ Configure `venv`:
 
 ```shell
 
-# cd .features/OpenStudioLandscapes-Template
+# cd .features/OpenStudioLandscapes-Teleport
 pip install -e "../../[dev]"
 pip install -e ".[dev]"
 
@@ -77,15 +77,15 @@ Add the following code to `OpenStudioLandscapes.engine.features.FEATURES`:
 ```python
 
 FEATURES.update(
-    "OpenStudioLandscapes-Template": {
+    "OpenStudioLandscapes-Teleport": {
         "enabled": True|False,
         # - from ENVIRONMENT VARIABLE (.env):
         #   "enabled": get_bool_env("ENV_VAR")
         # - combined:
         #   "enabled": True|False or get_bool_env(
-        #       "OPENSTUDIOLANDSCAPES__ENABLE_FEATURE_OPENSTUDIOLANDSCAPES_TEMPLATE"
+        #       "OPENSTUDIOLANDSCAPES__ENABLE_FEATURE_OPENSTUDIOLANDSCAPES_TELEPORT"
         #   )
-        "module": "OpenStudioLandscapes.Template.definitions",
+        "module": "OpenStudioLandscapes.Teleport.definitions",
         "compose_scope": ComposeScope.DEFAULT,
         "feature_config": OpenStudioLandscapesConfig.DEFAULT,
     }
@@ -160,7 +160,7 @@ We create the following SBOMs:
 - [`pipdeptree`](https://pypi.org/project/pipdeptree/) (Dot)
 - [`pipdeptree`](https://pypi.org/project/pipdeptree/) (Mermaid)
 
-SBOMs for the different Python interpreters defined in [`.noxfile.VERSIONS`](https://github.com/michimussato/OpenStudioLandscapes-Template/tree/main/noxfile.py) will be created in the [`.sbom`](https://github.com/michimussato/OpenStudioLandscapes-Template/tree/main/.sbom) directory of this repository.
+SBOMs for the different Python interpreters defined in [`.noxfile.VERSIONS`](https://github.com/michimussato/OpenStudioLandscapes-Teleport/tree/main/noxfile.py) will be created in the [`.sbom`](https://github.com/michimussato/OpenStudioLandscapes-Teleport/tree/main/.sbom) directory of this repository.
 
 - `cyclone-dx`
 - `pipdeptree` (Dot)
@@ -172,24 +172,39 @@ Currently, the following Python interpreters are enabled for testing:
 
 ## Variables
 
-The following variables are being declared in `OpenStudioLandscapes.Template.constants` and are accessible throughout the [`OpenStudioLandscapes-Template`](https://github.com/michimussato/OpenStudioLandscapes-Template/tree/main/src/OpenStudioLandscapes/Template/constants.py) package.
+The following variables are being declared in `OpenStudioLandscapes.Teleport.constants` and are accessible throughout the [`OpenStudioLandscapes-Teleport`](https://github.com/michimussato/OpenStudioLandscapes-Teleport/tree/main/src/OpenStudioLandscapes/Teleport/constants.py) package.
 
 | Variable           | Type   |
 | :----------------- | :----- |
 | `DOCKER_USE_CACHE` | `bool` |
 | `ASSET_HEADER`     | `dict` |
 | `FEATURE_CONFIGS`  | `dict` |
+| `SERVICE_NAME`     | `str`  |
 
 ### Feature Configs
 
 #### Feature Config: default
 
-| Variable                 | Type   | Value                                                                  |
-| :----------------------- | :----- | :--------------------------------------------------------------------- |
-| `DOCKER_USE_CACHE`       | `bool` | `False`                                                                |
-| `ENV_VAR_PORT_HOST`      | `str`  | `1234`                                                                 |
-| `ENV_VAR_PORT_CONTAINER` | `str`  | `4321`                                                                 |
-| `EXTRA_FILE`             | `str`  | `{DOT_FEATURES}/OpenStudioLandscapes-Template/.payload/bin/extra.file` |
+| Variable                              | Type                 | Value                                                            |
+| :------------------------------------ | :------------------- | :--------------------------------------------------------------- |
+| `DOCKER_USE_CACHE`                    | `bool`               | `False`                                                          |
+| `HOSTNAME`                            | `str`                | `teleport`                                                       |
+| `TELEPORT_ENTRY_POINT_HOST`           | `str`                | ``                                                               |
+| `TELEPORT_ENTRY_POINT_PORT`           | `str`                | ``                                                               |
+| `COMPOSE_NETWORK_MODE`                | `ComposeNetworkMode` | `host`                                                           |
+| `DOCKER_IMAGE`                        | `str`                | `public.ecr.aws/gravitational/teleport-distroless-debug:18`      |
+| `PROXY_SERVICE_AGENTS_PORT_HOST`      | `str`                | `3025`                                                           |
+| `PROXY_SERVICE_AGENTS_PORT_CONTAINER` | `str`                | `3025`                                                           |
+| `WEB_UI_PORT_HOST`                    | `str`                | `443`                                                            |
+| `WEB_UI_PORT_CONTAINER`               | `str`                | `443`                                                            |
+| `ALL_CLIENTS_PORT_HOST`               | `str`                | `3023`                                                           |
+| `ALL_CLIENTS_PORT_CONTAINER`          | `str`                | `3023`                                                           |
+| `LISTEN_ADDRESS_HOST`                 | `str`                | `3022`                                                           |
+| `LISTEN_ADDRESS_CONTAINER`            | `str`                | `3022`                                                           |
+| `TELEPORT_CONFIG`                     | `str`                | `{DOT_LANDSCAPES}/{LANDSCAPE}/Teleport__Teleport/volumes/config` |
+| `ACME_SH_DIR`                         | `str`                | `{DOT_LANDSCAPES}/.acme.sh`                                      |
+| `TELEPORT_DATA`                       | `str`                | `{DOT_LANDSCAPES}/{LANDSCAPE}/Teleport__Teleport/volumes/data`   |
+| `TELEPORT_CERT`                       | `str`                | `{DOT_LANDSCAPES}/.acme.sh/certs`                                |
 
 # Community
 

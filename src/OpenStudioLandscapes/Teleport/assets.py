@@ -1,6 +1,6 @@
 import copy
-import operator
 import json
+import operator
 import pathlib
 import shlex
 import shutil
@@ -32,8 +32,8 @@ from OpenStudioLandscapes.engine.common_assets.group_out import get_group_out
 from OpenStudioLandscapes.engine.constants import *
 from OpenStudioLandscapes.engine.discovery.discovery import *
 from OpenStudioLandscapes.engine.enums import *
-from OpenStudioLandscapes.engine.utils import *
 from OpenStudioLandscapes.engine.features import FEATURES
+from OpenStudioLandscapes.engine.utils import *
 
 from OpenStudioLandscapes.Teleport.constants import *
 
@@ -143,7 +143,7 @@ def compose_networks(
 ins, feature_ins = get_dynamic_ins(
     compose_scope_filter=FEATURES["OpenStudioLandscapes-Teleport"]["compose_scope"],
     imported_features=IMPORTED_FEATURES,
-    operator=operator.ne
+    operator=operator.ne,
 )
 
 
@@ -154,11 +154,10 @@ ins, feature_ins = get_dynamic_ins(
     },
 )
 def fetch_services(
-        context: AssetExecutionContext,
-        **kwargs,
+    context: AssetExecutionContext,
+    **kwargs,
 ) -> Generator[
-    Output[MutableMapping[str, List[MutableMapping[str, List]]]]
-    | AssetMaterialization,
+    Output[MutableMapping[str, List[MutableMapping[str, List]]]] | AssetMaterialization,
     None,
     None,
 ]:
@@ -194,16 +193,20 @@ def fetch_services(
         teleport = {
             "teleport_host": v.get("env", {}).get("TELEPORT_ENTRY_POINT_HOST", ""),
             "teleport_port": v.get("env", {}).get("TELEPORT_ENTRY_POINT_PORT", ""),
-            "teleport_domain_lan": v.get("env", {}).get("OPENSTUDIOLANDSCAPES__DOMAIN_LAN", ""),
-            "teleport_domain_wan": v.get("env", {}).get("OPENSTUDIOLANDSCAPES__DOMAIN_WAN", ""),
+            "teleport_domain_lan": v.get("env", {}).get(
+                "OPENSTUDIOLANDSCAPES__DOMAIN_LAN", ""
+            ),
+            "teleport_domain_wan": v.get("env", {}).get(
+                "OPENSTUDIOLANDSCAPES__DOMAIN_WAN", ""
+            ),
         }
 
         if not all(
-                [
-                    bool(teleport["teleport_host"]),
-                    bool(teleport["teleport_port"]),
-                ]
-            ):
+            [
+                bool(teleport["teleport_host"]),
+                bool(teleport["teleport_port"]),
+            ]
+        ):
             # only add the service to the teleport.yaml if
             # both teleport_host and teleport_port are specified
             # Todo: for now ok
@@ -211,7 +214,7 @@ def fetch_services(
 
         teleport_expanded = expand_dict_vars(
             dict_to_expand=teleport,
-            kv=v['env'],
+            kv=v["env"],
         )
 
         envs_feature[k] = copy.deepcopy(teleport_expanded)
@@ -228,9 +231,7 @@ def fetch_services(
     yield AssetMaterialization(
         asset_key=context.asset_key,
         metadata={
-            "__".join(context.asset_key.path): MetadataValue.json(
-                envs_feature
-            ),
+            "__".join(context.asset_key.path): MetadataValue.json(envs_feature),
             **metadatavalues_from_dict(
                 context=context,
                 d_serialized=kwargs_serialized,
@@ -298,9 +299,7 @@ def fetch_services(
 def certificates(
     context: AssetExecutionContext,
     env: dict,  # pylint: disable=redefined-outer-name
-) -> Generator[
-    Output[list[dict]] | AssetMaterialization, None, None
-]:
+) -> Generator[Output[list[dict]] | AssetMaterialization, None, None]:
 
     acme_sh_dir = pathlib.Path(env["ACME_SH_DIR"])
     cert_dirs = []
@@ -352,8 +351,7 @@ def teleport_yaml(
     certificates: list[dict],  # pylint: disable=redefined-outer-name
     fetch_services: dict,  # pylint: disable=redefined-outer-name
 ) -> Generator[Output[pathlib.Path] | AssetMaterialization, None, None]:
-    """
-    """
+    """ """
 
     service_name = SERVICE_NAME
     # container_name = "--".join([service_name, env.get("LANDSCAPE", "default")])
@@ -386,7 +384,7 @@ def teleport_yaml(
             "redirect": [
                 "localhost",
             ],
-        }
+        },
     }
 
     apps: list[dict] = []
@@ -395,7 +393,9 @@ def teleport_yaml(
         app_ = copy.deepcopy(app_default_dict)
         app_["name"] = settings_teleport["teleport_host"]
         app_["uri"] = f"http://localhost:{settings_teleport['teleport_port']}/"
-        app_["public_addr"] = f"{settings_teleport['teleport_host']}.{service_name}.{settings_teleport['teleport_domain_wan']}"
+        app_[
+            "public_addr"
+        ] = f"{settings_teleport['teleport_host']}.{service_name}.{settings_teleport['teleport_domain_wan']}"
         app_["rewrite"]["redirect"].append(
             f"{settings_teleport['teleport_host']}.{settings_teleport['teleport_domain_lan']}"
         )
@@ -605,19 +605,17 @@ def teleport_yaml(
             "log": {
                 "output": "stderr",
                 "severity": "INFO",
-                "format": {
-                    "output": "text"
-                }
+                "format": {"output": "text"},
             },
             "ca_pin": "",
-            "diag_addr": ""
+            "diag_addr": "",
         },
         "auth_service": {
             # https://goteleport.com/docs/reference/deployment/config/#auth-service
             "enabled": "yes",
             # "listen_addr": f"0.0.0.0:{env['PROXY_SERVICE_AGENTS_PORT_CONTAINER']}",
             "listen_addr": f"0.0.0.0:3025",
-            "proxy_listener_mode": "multiplex"
+            "proxy_listener_mode": "multiplex",
         },
         # Server Access
         # https://goteleport.com/docs/enroll-resources/server-access/getting-started/
@@ -710,15 +708,11 @@ def teleport_yaml(
     yield AssetMaterialization(
         asset_key=context.asset_key,
         metadata={
-            "__".join(context.asset_key.path): MetadataValue.path(
-                teleport_yaml_script
-            ),
+            "__".join(context.asset_key.path): MetadataValue.path(teleport_yaml_script),
             "teleport_yaml_dict": MetadataValue.md(
                 f"```shell\n{teleport_yaml_dict}\n```"
             ),
-            "teleport_yaml_": MetadataValue.md(
-                f"```yaml\n{teleport_yaml_}\n```"
-            )
+            "teleport_yaml_": MetadataValue.md(f"```yaml\n{teleport_yaml_}\n```"),
         },
     )
 
@@ -850,15 +844,15 @@ def compose_teleport(
                 # },
                 # "command": command,
                 "entrypoint": [
-                #      - "/usr/bin/dumb-init"
-                #      - "--help"
+                    #      - "/usr/bin/dumb-init"
+                    #      - "--help"
                     "/usr/bin/dumb-init",
                     "/usr/local/bin/teleport",
                     "start",
                     "-c",
                     "/etc/teleport/teleport.yaml",
                     # "--insecure",
-                ]
+                ],
             },
         },
     }
@@ -1343,6 +1337,8 @@ def cmd_create_teleport_admin(
     yield AssetMaterialization(
         asset_key=context.asset_key,
         metadata={
-            "__".join(context.asset_key.path): MetadataValue.path(shlex.join(teleport_create_admin_cmd)),
+            "__".join(context.asset_key.path): MetadataValue.path(
+                shlex.join(teleport_create_admin_cmd)
+            ),
         },
     )

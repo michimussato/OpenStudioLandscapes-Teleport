@@ -2,7 +2,6 @@ import textwrap
 
 import snakemd
 
-
 """
 # Enroll SSH Server
 # 1.)
@@ -20,26 +19,26 @@ $ tctl status
   Valid until:        2025-09-23 22:30:43 +0200 CEST [valid for 12h0m0s]
   Extensions:         login-ip, permit-agent-forwarding, permit-port-forwarding, permit-pty, private-key-policy
 
-Cluster: teleport.farm.evil                                                      
-Version: 18.2.0                                                                  
-CA pins: sha256:7c1a3095c6be4478321f16a83d54bf2125fe8c060e43c5067066b99bab78b8d1 
+Cluster: teleport.farm.evil
+Version: 18.2.0
+CA pins: sha256:7c1a3095c6be4478321f16a83d54bf2125fe8c060e43c5067066b99bab78b8d1
 
-authority     rotation                protocol status algorithm   storage  
-------------- ----------------------- -------- ------ ----------- -------- 
-host          standby (never rotated) SSH      active Ed25519     software 
-                                      TLS      active ECDSA P-256 software 
-user          standby (never rotated) SSH      active Ed25519     software 
-                                      TLS      active ECDSA P-256 software 
-db            standby (never rotated) TLS      active RSA 2048    software 
-db_client     standby (never rotated) TLS      active RSA 2048    software 
-openssh       standby (never rotated) SSH      active Ed25519     software 
-jwt           standby (never rotated) JWT      active ECDSA P-256 software 
-saml_idp      standby (never rotated) TLS      active RSA 2048    software 
-oidc_idp      standby (never rotated) JWT      active RSA 2048    software 
-spiffe        standby (never rotated) JWT      active RSA 2048    software 
-                                      TLS      active ECDSA P-256 software 
-okta          standby (never rotated) JWT      active ECDSA P-256 software 
-awsra         standby (never rotated) TLS      active ECDSA P-256 software 
+authority     rotation                protocol status algorithm   storage
+------------- ----------------------- -------- ------ ----------- --------
+host          standby (never rotated) SSH      active Ed25519     software
+                                      TLS      active ECDSA P-256 software
+user          standby (never rotated) SSH      active Ed25519     software
+                                      TLS      active ECDSA P-256 software
+db            standby (never rotated) TLS      active RSA 2048    software
+db_client     standby (never rotated) TLS      active RSA 2048    software
+openssh       standby (never rotated) SSH      active Ed25519     software
+jwt           standby (never rotated) JWT      active ECDSA P-256 software
+saml_idp      standby (never rotated) TLS      active RSA 2048    software
+oidc_idp      standby (never rotated) JWT      active RSA 2048    software
+spiffe        standby (never rotated) JWT      active RSA 2048    software
+                                      TLS      active ECDSA P-256 software
+okta          standby (never rotated) JWT      active ECDSA P-256 software
+awsra         standby (never rotated) TLS      active ECDSA P-256 software
 bound_keypair standby (never rotated) JWT      active Ed25519     software
 # 2.)
 # $ tctl tokens add --type=node --format=text > token.file
