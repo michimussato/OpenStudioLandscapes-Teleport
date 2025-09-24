@@ -1,4 +1,5 @@
 import copy
+import operator
 import json
 import pathlib
 import shlex
@@ -139,37 +140,21 @@ def compose_networks(
     )
 
 
-# Dynamic inputs based on the imported
-# third party code locations
-ins = {}
-feature_ins = {}
-for i in IMPORTED_FEATURES:
-    # ex: module = "OpenStudioLandscapes.Ayon.definitions"
-    module = i["module"]
-    compose_scope = i["compose_scope"]
-    if compose_scope != FEATURES["OpenStudioLandscapes-Teleport"]["compose_scope"]:
-        split = module.split(".")
-        key = split[1]  # key = "Ayon"
-        ins[f"{split[0]}_{split[1]}"] = AssetIn(AssetKey([key, "group_out"]))
-        feature_ins[f"{split[0]}_{split[1]}"] = AssetIn(AssetKey([key, "feature_out"]))
+ins, feature_ins = get_dynamic_ins(
+    compose_scope_filter=FEATURES["OpenStudioLandscapes-Teleport"]["compose_scope"],
+    imported_features=IMPORTED_FEATURES,
+    operator=operator.ne
+)
 
 
 @asset(
     **ASSET_HEADER,
     ins={
-        # "env": AssetIn(
-        #     AssetKey([*ASSET_HEADER["key_prefix"], "env"]),
-        # ),
-        # "group_out_base": AssetIn(
-        #     AssetKey([*ASSET_HEADER_BASE["key_prefix"], str(GroupIn.BASE_IN)])
-        # ),
         **feature_ins,
     },
 )
 def fetch_services(
         context: AssetExecutionContext,
-        # env: dict,  # pylint: disable=redefined-outer-name
-        # group_out_base: dict,  # pylint: disable=redefined-outer-name
         **kwargs,
 ) -> Generator[
     Output[MutableMapping[str, List[MutableMapping[str, List]]]]
@@ -181,13 +166,6 @@ def fetch_services(
 
     context.log.info(kwargs)
 
-    # env_base = group_out_base["env_base"]
-    # docker_config: DockerConfig = group_out_base["docker_config"]
-    # docker_config_json: pathlib.Path = group_out_base["docker_config_json"]
-
-    docker_compose_yaml: MutableMapping[str, str] = {}
-    docker_compose: MutableMapping[str, Any] = {}
-
     envs_feature = {}
 
     for k, v in kwargs.items():
@@ -197,6 +175,9 @@ def fetch_services(
         # - features
         # - docker_config
         # - docker_config_json
+        # - compose
+        # - compose_yaml
+        # - group_in
         # from kwargs dicts
         for d in [
             "env_base",
@@ -213,7 +194,7 @@ def fetch_services(
         teleport = {
             "teleport_host": v.get("env", {}).get("TELEPORT_ENTRY_POINT_HOST", ""),
             "teleport_port": v.get("env", {}).get("TELEPORT_ENTRY_POINT_PORT", ""),
-            "teleport_domain_lan": v.get("env", {}).get("ROOT_DOMAIN", ""),
+            "teleport_domain_lan": v.get("env", {}).get("OPENSTUDIOLANDSCAPES__DOMAIN_LAN", ""),
             "teleport_domain_wan": v.get("env", {}).get("OPENSTUDIOLANDSCAPES__DOMAIN_WAN", ""),
         }
 
@@ -250,8 +231,6 @@ def fetch_services(
             "__".join(context.asset_key.path): MetadataValue.json(
                 envs_feature
             ),
-            # "envs_feature": MetadataValue.json(envs_feature),
-            # "docker_compose": MetadataValue.json(docker_compose),
             **metadatavalues_from_dict(
                 context=context,
                 d_serialized=kwargs_serialized,
@@ -378,7 +357,7 @@ def teleport_yaml(
 
     service_name = SERVICE_NAME
     # container_name = "--".join([service_name, env.get("LANDSCAPE", "default")])
-    host_name_lan = ".".join([service_name, env["ROOT_DOMAIN"]])
+    host_name_lan = ".".join([service_name, env["OPENSTUDIOLANDSCAPES__DOMAIN_LAN"]])
     host_name_wan = ".".join([service_name, env["OPENSTUDIOLANDSCAPES__DOMAIN_WAN"]])
 
     host_names = [
@@ -839,14 +818,14 @@ def compose_teleport(
 
     service_name = SERVICE_NAME
     container_name = "--".join([service_name, env.get("LANDSCAPE", "default")])
-    host_name = ".".join([service_name, env["ROOT_DOMAIN"]])
+    host_name = ".".join([service_name, env["OPENSTUDIOLANDSCAPES__DOMAIN_LAN"]])
 
     docker_dict = {
         "services": {
             service_name: {
                 "container_name": container_name,
                 "hostname": host_name,
-                "domainname": env.get("ROOT_DOMAIN"),
+                "domainname": env.get("OPENSTUDIOLANDSCAPES__DOMAIN_LAN"),
                 # "mac_address": ":".join(re.findall(r"..", env["HOST_ID"])),
                 "restart": "always",
                 "image": env["DOCKER_IMAGE"],
@@ -1180,14 +1159,14 @@ def compose_teleport(
 #
 #     service_name = "acme-sh"
 #     container_name = "--".join([service_name, env.get("LANDSCAPE", "default")])
-#     host_name = ".".join([service_name, env["ROOT_DOMAIN"]])
+#     host_name = ".".join([service_name, env["OPENSTUDIOLANDSCAPES__DOMAIN_LAN"]])
 #
 #     docker_dict = {
 #         "services": {
 #             service_name: {
 #                 "container_name": container_name,
 #                 "hostname": host_name,
-#                 "domainname": env.get("ROOT_DOMAIN"),
+#                 "domainname": env.get("OPENSTUDIOLANDSCAPES__DOMAIN_LAN"),
 #                 # "mac_address": ":".join(re.findall(r"..", env["HOST_ID"])),
 #                 "restart": "no",
 #                 "image": "docker.io/neilpang/acme.sh",

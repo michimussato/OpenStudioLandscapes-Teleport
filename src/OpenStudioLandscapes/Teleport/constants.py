@@ -40,6 +40,9 @@ ASSET_HEADER = {
 FEATURE_CONFIGS = {
     OpenStudioLandscapesConfig.DEFAULT: {
         "DOCKER_USE_CACHE": DOCKER_USE_CACHE,
+        "HOSTNAME": "teleport",
+        "TELEPORT_ENTRY_POINT_HOST": "",  # Either a hardcoded str or a ref to a Variable (with double {{ }}!)
+        "TELEPORT_ENTRY_POINT_PORT": "",  # Either a hardcoded str or a ref to a Variable (with double {{ }}!)
         "COMPOSE_NETWORK_MODE": ComposeNetworkMode.HOST,
         # :latest does not exist
         # https://gallery.ecr.aws/gravitational
@@ -106,7 +109,7 @@ FEATURE_CONFIGS = {
             .as_posix(),
         }["landscapes_root"],
         # Todo:
-        #  - [ ] find a dynamic way to fetch all services with the correct ports etc.
+        #  - [x] find a dynamic way to fetch all services with the correct ports etc.
         #
         # Todo:
         #  - [x] Try with local IP (wlp0s20f3,  192.168.178.195:4545) and exposed port
@@ -122,64 +125,6 @@ FEATURE_CONFIGS = {
         #        $ nc -vz 127.0.1.1 80
         #        Connection to 127.0.1.1 80 port [tcp/http] succeeded!
         #  - [ ] make sure teleport start runs automatically somewhere
-        "TELEPORT_WEB_APPS": [
-            # {
-            #     "name": "harbor",
-            #     "uri": "http://localhost:80/",
-            #     "insecure_skip_verify": False,
-            #     "public_addr": "harbor.teleport.openstudiolandscapes.cloud-ip.cc",
-            #     "use_any_proxy_public_addr": False,
-            #     "rewrite": {
-            #         "redirect": [
-            #             "localhost",
-            #             f"harbor.farm.evil",
-            #         ],
-            #     }
-            # },
-            {
-                "name": "ayon",
-                # for ayon specifically, uri could be:
-                # "uri": "http://localhost:5005/",
-                # "uri": "http://server.farm.evil:5005/",
-                # "uri": "192.168.178.195:5005/",
-                "uri": "http://localhost:5005/",
-                "insecure_skip_verify": False,
-                "public_addr": "ayon.teleport.openstudiolandscapes.cloud-ip.cc",
-                "use_any_proxy_public_addr": False,
-                "rewrite": {
-                    "redirect": [
-                        "localhost",
-                        f"ayon.farm.evil",
-                    ],
-                }
-            },
-            {
-                "name": "dagster",
-                "uri": "http://localhost:3003/",
-                "insecure_skip_verify": False,
-                "public_addr": "dagster.teleport.openstudiolandscapes.cloud-ip.cc",
-                "use_any_proxy_public_addr": False,
-                "rewrite": {
-                    "redirect": [
-                        "localhost",
-                        f"dagster.farm.evil",
-                    ],
-                }
-            },
-            {
-                "name": "kitsu",
-                "uri": "http://localhost:4545/",
-                "insecure_skip_verify": False,
-                "public_addr": "kitsu.teleport.openstudiolandscapes.cloud-ip.cc",
-                "use_any_proxy_public_addr": False,
-                "rewrite": {
-                    "redirect": [
-                        "localhost",
-                        f"kitsu.farm.evil",
-                    ],
-                }
-            },
-        ]
     }
 }
 # @formatter:on
