@@ -339,9 +339,12 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
         level=6,
     )
 
-    doc.add_heading(
-        text="One Shot",
-        level=7,
+    doc.add_paragraph(
+        text=textwrap.dedent(
+            """
+            To start `teleport` as a _One Shot_:
+            """
+        )
     )
 
     doc.add_code(
@@ -353,9 +356,12 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
         lang="shell",
     )
 
-    doc.add_heading(
-        text="Systemd (`--user`)",
-        level=7,
+    doc.add_paragraph(
+        text=textwrap.dedent(
+            """
+            To start `teleport` with `systemd` in `--user` space:
+            """
+        )
     )
 
     doc.add_code(
