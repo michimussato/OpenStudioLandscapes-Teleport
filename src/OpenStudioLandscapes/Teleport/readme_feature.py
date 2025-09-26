@@ -100,8 +100,8 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
     doc.add_paragraph(
         text=textwrap.dedent(
             """
-            `OpenStudioLandscapes-Teleport` is based on the Teleport
-            Community Edition.
+            `OpenStudioLandscapes-Teleport` is based on the 
+            *Teleport Community Edition*.
             """
         )
     )
@@ -129,9 +129,9 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
 
     doc.add_unordered_list(
         [
-            "`[tctl](https://goteleport.com/docs/reference/cli/tctl/)`",
-            "`[tsh](https://goteleport.com/docs/reference/cli/tsh/)`",
-            "`[teleport](https://goteleport.com/docs/reference/cli/teleport/)`",
+            "[`tctl`](https://goteleport.com/docs/reference/cli/tctl/)",
+            "[`tsh`](https://goteleport.com/docs/reference/cli/tsh/)",
+            "[`teleport`](https://goteleport.com/docs/reference/cli/teleport/)",
         ]
     )
 
@@ -165,7 +165,7 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
             # 3e4105e329a532718759903cca3df7ccb0d38cf8b7c6c5659ad5c3fe72d7d76a   public.ecr.aws/gravitational/teleport-distroless-debug:18.2.0   "/usr/bin/dumb-init /usr/local/bin/teleport start -c /etc/teleport/teleport.yaml"   2 weeks ago   Exited (0) 2 weeks ago             teleport
             DOCKER_CONTAINER_ID=<teleport_docker_container_id>
             /usr/local/bin/docker exec ${DOCKER_CONTAINER_ID} tctl users add admin --roles=editor,access --logins=root,ubuntu,ec2-user\
-            """
+"""
         ),
         lang="shell",
     )
@@ -174,8 +174,8 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
         text=textwrap.dedent(
             """
             For convenience, if a Landscape has been configured with OpenStudioLandscapes (with
-            OpenStudioLandscapes-Teleport enabled), the command above can be copied from the
-            `Teleport__cmd_create_teleport_admin` metadata in the `cmd_create_teleport_admin` asset.
+            `OpenStudioLandscapes-Teleport` enabled), the command above can be copied from the
+            `Teleport__cmd_create_teleport_admin` metadata in the `cmd_create_teleport_admin` Dagster asset.
             """
         )
     )
@@ -203,9 +203,9 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
             https://teleport.yourdomain.com:443/web/invite/f25e44d67778cd48a39db3afe87f5174
             
             NOTE: Make sure teleport.yourdomain.com:443 points at a Teleport proxy which users can access.\
-            """
+"""
         ),
-        lang="shell",
+        lang="generic",
     )
 
     doc.add_paragraph(
@@ -250,7 +250,7 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
             sudo rm -rf /var/lib/teleport
             sudo rm /etc/teleport.yaml
             rm -rf ~/.config/teleport/*\
-            """
+"""
         ),
         lang="shell",
     )
@@ -271,7 +271,7 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
             TELEPORT_FQDN=teleport.yourdomain.com
             
             tsh login --proxy=${TELEPORT_FQDN} --user=admin\
-            """
+"""
         ),
         lang="shell",
     )
@@ -297,9 +297,9 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
               Kubernetes:         enabled
               Valid until:        2025-09-26 22:16:48 +0200 CEST [valid for 12h0m0s]
               Extensions:         login-ip, permit-agent-forwarding, permit-port-forwarding, permit-pty, private-key-policy\
-            """
+"""
         ),
-        lang="shell",
+        lang="generic",
     )
 
     doc.add_heading(
@@ -311,7 +311,7 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
         code=textwrap.dedent(
             """\
             tctl tokens add --type=node --format=text > ${HOME}/.config/teleport/teleport_token\
-            """
+"""
         ),
         lang="shell",
     )
@@ -324,12 +324,12 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
     doc.add_code(
         code=textwrap.dedent(
             """\
-            teleport node configure \
-                --data-dir=${HOME}/.local/share/teleport \
-                --output=file://${HOME}/.config/teleport/teleport.yaml \
-                --token=${HOME}/.config/teleport/teleport_token \
+            teleport node configure \\
+                --data-dir=${HOME}/.local/share/teleport \\
+                --output=file://${HOME}/.config/teleport/teleport.yaml \\
+                --token=${HOME}/.config/teleport/teleport_token \\
                 --proxy=teleport.yourdomain.com:443\
-            """
+"""
         ),
         lang="shell",
     )
@@ -351,7 +351,7 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
         code=textwrap.dedent(
             """\
             teleport start --config="${HOME}/.config/teleport/teleport.yaml"\
-            """
+"""
         ),
         lang="shell",
     )
@@ -359,7 +359,7 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
     doc.add_paragraph(
         text=textwrap.dedent(
             """
-            To start `teleport` with `systemd` in `--user` space:
+            To setup `teleport` with `systemd` in `--user` space:
             """
         )
     )
@@ -390,7 +390,7 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
             #  ::Unit ${HOME}/.config/systemd/user/teleport.service is added as a dependency to a non-existent unit multi-user.target.
             WantedBy=multi-user.target
             EOF\
-            """
+"""
         ),
         lang="shell",
     )
@@ -402,7 +402,7 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
             systemctl --user enable teleport
             systemctl --user start teleport
             # Display logs with `journalctl --user -fu teleport`\
-            """
+"""
         ),
         lang="shell",
     )
