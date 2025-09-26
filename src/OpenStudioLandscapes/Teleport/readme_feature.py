@@ -229,7 +229,7 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
     doc.add_paragraph(
         text=textwrap.dedent(
             """
-            Go ahead and visite the linke you're presented with and register your mobile device for
+            Go ahead and visit the link you're presented with and register your mobile device for
             Multi-Factor Authentication.
             """
         )
@@ -265,7 +265,7 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
         text=textwrap.dedent(
             """
             SSL, certificates and the web can cause headaches. I'm not an expert in
-            web technology to say the least. For my own sanity (and your too, hopefully)
+            web technology to say the least. For my own sanity (and yours too, hopefully)
             I have integrated SSL certificate creation into `OpenStudioLandscapes` by
             packing the most necessary tools and commands into `nox` sessions. 
             We make use of the ready made `acme.sh` Docker image and interact with it
@@ -321,8 +321,8 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
         text=textwrap.dedent(
             """
             The following example domain with associated sub-domains
-            have to registered and the DNS records have to point to
-            the IP where `nginx` can be accessed through.
+            have to be registered and the DNS records have to point to
+            the (WAN) IP where `nginx` is listening.
             """
         )
     )
@@ -376,11 +376,13 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
 
     doc.add_code(
         code=textwrap.dedent(
-            f"""\
+            """\
             tsh logout
-            sudo rm -rf /var/lib/teleport
-            sudo rm /etc/teleport.yaml
-            rm -rf ~/.config/teleport/*\
+            systemctl --user disable --now teleport
+            rm -rf ${HOME}/.config/teleport/*
+            rm -rf ${HOME}/.local/share/teleport
+            rm ${HOME}/.config/systemd/teleport.service
+            systemctl --user daemon-reload\
 """
         ),
         lang="shell",
@@ -507,7 +509,7 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
     doc.add_code(
         code=textwrap.dedent(
             """\
-            cat > ${HOME}/.config/systemd/teleport.service2 << "EOF"
+            cat > ${HOME}/.config/systemd/teleport.service << "EOF"
             [Unit]
             Description=Teleport Service
             After=network.target
@@ -539,8 +541,7 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
         code=textwrap.dedent(
             """\
             systemctl --user daemon-reload
-            systemctl --user enable teleport
-            systemctl --user start teleport
+            systemctl --user enable --now teleport
             # Display logs with `journalctl --user -fu teleport`\
 """
         ),
