@@ -61,6 +61,10 @@ Happy Teleporting!
 """
 
 
+# Todo:
+#  - [ ] explain SSL certificate creation
+
+
 def readme_feature(doc: snakemd.Document) -> snakemd.Document:
 
     # Some Specific information
@@ -133,6 +137,20 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
             "[`tsh`](https://goteleport.com/docs/reference/cli/tsh/)",
             "[`teleport`](https://goteleport.com/docs/reference/cli/teleport/)",
         ]
+    )
+
+    doc.add_heading(
+        text="Configuration",
+        level=3,
+    )
+
+    doc.add_paragraph(
+        text=textwrap.dedent(
+            """
+            Here you can find out more about the [`teleport.yaml`](https://goteleport.com/docs/reference/deployment/config/)
+            configuration file.
+            """
+        )
     )
 
     doc.add_heading(
@@ -239,6 +257,119 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
     )
 
     doc.add_heading(
+        text="Generate SSL Certificates",
+        level=5,
+    )
+
+    doc.add_paragraph(
+        text=textwrap.dedent(
+            """
+            SSL, certificates and the web can cause headaches. I'm not an expert in
+            web technology to say the least. For my own sanity (and your too, hopefully)
+            I have integrated SSL certificate creation into `OpenStudioLandscapes` by
+            packing the most necessary tools and commands into `nox` sessions. 
+            We make use of the ready made `acme.sh` Docker image and interact with it
+            directly.
+            """
+        )
+    )
+
+    doc.add_paragraph(
+        text=textwrap.dedent(
+            """
+            Something important to keep in mind while doing so: the CA 
+            (Certificate Authority, i. e. Let's Encrypt) relies on port
+            80 to be open on your firewall and that `acme.sh`'s `nignx` 
+            is reachable on this port. Otherwise, your domain ownership
+            can not be verified.
+            """
+        )
+    )
+
+    doc.add_paragraph(
+        text=textwrap.dedent(
+            """
+            `OpenStudioLandscapes` Harbor also listens on port 80 which will
+            conflict with `nginx` from `acme.sh`. So, while setting up the 
+            certificates with `nox` and `acme.sh`, make sure that Harbor 
+            (all `OpenStudioLandscapes` ideally) are shut down.
+            See the [Guide](https://github.com/michimussato/OpenStudioLandscapes/blob/main/wiki/run_openstudiolandscapes/from_manual.md#with-harbor)
+            for more information.
+            """
+        )
+    )
+
+    doc.add_code(
+        code=textwrap.dedent(
+            f"""\
+            $ nox --list-sessions
+            [...]
+            - acme_sh_prepare -> Create acme.sh docker-compose.yml.
+            - acme_sh_clear -> Clear acme.sh with `sudo`. WARNING: DATA LOSS!
+            - acme_sh_up_detach -> Start acme.sh container in detached mode
+            - acme_sh_print_help -> Print acme.sh help inside running container
+            - acme_sh_down -> Stop acme.sh container
+            - acme_sh_register_account -> Register account inside running container
+            - acme_sh_create_certificate -> Register account inside running container
+            [...]\
+"""
+        ),
+        lang="generic",
+    )
+
+    doc.add_paragraph(
+        text=textwrap.dedent(
+            """
+            The following example domain with associated sub-domains
+            have to registered and the DNS records have to point to
+            the IP where `nginx` can be accessed through.
+            """
+        )
+    )
+
+    doc.add_paragraph(
+        text=textwrap.dedent(
+            """
+            The DNS hoster has to support wildcards for now for everything
+            to work properly. Besides that, the automated certificate 
+            creation process requires API access to the DNS server. 
+            Both features _can_ be paid features. I, for my part, decided to
+            continue with [ClouDNS.net](https://www.cloudns.net). 
+            I subscribed to the [Premium S Model](https://www.cloudns.net/premium/)
+            which is very affordable. Going this extra mile easily compensates for
+            the headache caused by other (free or not) approaches.
+            """
+        )
+    )
+
+    doc.add_paragraph(
+        text=textwrap.dedent(
+            """
+            My DNS records look as follows:
+            """
+        )
+    )
+
+    doc.add_code(
+        code=textwrap.dedent(
+            f"""\
+            mydomain.cloud-ip.cc                    A       <MY ROUTERS IP>
+            teleport.mydomain.cloud-ip.cc           CNAME   mydomain.cloud-ip.cc
+            *.teleport.mydomain.cloud-ip.cc         CNAME   teleport.mydomain.cloud-ip.cc\
+"""
+        ),
+        lang="generic",
+    )
+
+    doc.add_paragraph(
+        text=textwrap.dedent(
+            """
+            API access can be granted in the [API Settings Page](https://www.cloudns.net/api-settings/).
+            """
+        )
+    )
+
+    doc.add_heading(
         text="Start Over",
         level=5,
     )
@@ -258,6 +389,15 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
     doc.add_heading(
         text="Register SSH Server",
         level=5,
+    )
+
+    doc.add_paragraph(
+        text=textwrap.dedent(
+            """
+            The following guide was assembled by following the step outlined
+            in the [Server Access Getting Started Guide](https://goteleport.com/docs/enroll-resources/server-access/getting-started/).
+            """
+        )
     )
 
     doc.add_heading(
