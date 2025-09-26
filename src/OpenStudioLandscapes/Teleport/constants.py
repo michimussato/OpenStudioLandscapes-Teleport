@@ -23,6 +23,7 @@ LOGGER = get_dagster_logger(__name__)
 from OpenStudioLandscapes.engine.constants import DOCKER_USE_CACHE_GLOBAL
 from OpenStudioLandscapes.engine.enums import (
     ComposeNetworkMode,
+    FeatureVolumeType,
     OpenStudioLandscapesConfig,
 )
 
@@ -63,54 +64,73 @@ FEATURE_CONFIGS = {
         # ssh_service
         "LISTEN_ADDRESS_HOST": "3022",
         "LISTEN_ADDRESS_CONTAINER": "3022",
-        "TELEPORT_CONFIG": pathlib.Path(
-            "{DOT_LANDSCAPES}",
-            "{LANDSCAPE}",
-            f"{GROUP}__{'__'.join(KEY)}",
-            "volumes",
-            "config",
-        )
-        .expanduser()
-        .as_posix(),
-        "ACME_SH_DIR": pathlib.Path(
-            "{DOT_LANDSCAPES}",
-            ".acme.sh",
-        )
-        .expanduser()
-        .as_posix(),
-        "TELEPORT_DATA": pathlib.Path(
-            "{DOT_LANDSCAPES}",
-            "{LANDSCAPE}",
-            f"{GROUP}__{'__'.join(KEY)}",
-            "volumes",
-            "data",
-        )
-        .expanduser()
-        .as_posix(),
+
+        "TELEPORT_CONFIG": {
+            FeatureVolumeType.CONTAINED: pathlib.Path(
+                "{DOT_LANDSCAPES}",
+                "{LANDSCAPE}",
+                f"{GROUP}__{'__'.join(KEY)}",
+                "volumes",
+                "config",
+            )
+            .expanduser()
+            .as_posix(),
+            FeatureVolumeType.SHARED: pathlib.Path(
+                "{DOT_LANDSCAPES}",
+                "{DOT_SHARED_VOLUMES}",
+                f"{GROUP}__{'__'.join(KEY)}",
+                "volumes",
+                "config",
+            )
+            .expanduser()
+            .as_posix(),
+        }[FeatureVolumeType.CONTAINED],
+
+        "TELEPORT_DATA": {
+            FeatureVolumeType.CONTAINED: pathlib.Path(
+                "{DOT_LANDSCAPES}",
+                "{LANDSCAPE}",
+                f"{GROUP}__{'__'.join(KEY)}",
+                "volumes",
+                "data",
+            )
+            .expanduser()
+            .as_posix(),
+            FeatureVolumeType.SHARED: pathlib.Path(
+                "{DOT_LANDSCAPES}",
+                ".shared_volumes",
+                f"{GROUP}__{'__'.join(KEY)}",
+                "volumes",
+                "data",
+            )
+            .expanduser()
+            .as_posix(),
+        }[FeatureVolumeType.CONTAINED],
+
+        "ACME_SH_DIR": {
+            FeatureVolumeType.CONTAINED: None,
+            FeatureVolumeType.SHARED: pathlib.Path(
+                "{DOT_LANDSCAPES}",
+                ".acme.sh",
+            )
+            .expanduser()
+            .as_posix(),
+        }[FeatureVolumeType.SHARED],
+
         "TELEPORT_CERT": {
             #################################################################
             # Certificates directory
             #################################################################
-            #################################################################
-            # Inside Landscape:
-            "default": pathlib.Path(
-                "{DOT_LANDSCAPES}",
-                "{LANDSCAPE}",
-                ".acme.sh",
-                "certs",
-            )
-            .expanduser()
-            .as_posix(),
-            #################################################################
-            # In Landscapes root dir:
-            "landscapes_root": pathlib.Path(
+            FeatureVolumeType.CONTAINED: None,
+            FeatureVolumeType.SHARED: pathlib.Path(
                 "{DOT_LANDSCAPES}",
                 ".acme.sh",
                 "certs",
             )
             .expanduser()
             .as_posix(),
-        }["landscapes_root"],
+        }[FeatureVolumeType.SHARED],
+
         # Todo:
         #  - [x] find a dynamic way to fetch all services with the correct ports etc.
         #
