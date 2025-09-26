@@ -64,7 +64,6 @@ FEATURE_CONFIGS = {
         # ssh_service
         "LISTEN_ADDRESS_HOST": "3022",
         "LISTEN_ADDRESS_CONTAINER": "3022",
-
         "TELEPORT_CONFIG": {
             FeatureVolumeType.CONTAINED: pathlib.Path(
                 "{DOT_LANDSCAPES}",
@@ -85,7 +84,6 @@ FEATURE_CONFIGS = {
             .expanduser()
             .as_posix(),
         }[FeatureVolumeType.CONTAINED],
-
         "TELEPORT_DATA": {
             FeatureVolumeType.CONTAINED: pathlib.Path(
                 "{DOT_LANDSCAPES}",
@@ -106,7 +104,6 @@ FEATURE_CONFIGS = {
             .expanduser()
             .as_posix(),
         }[FeatureVolumeType.CONTAINED],
-
         "ACME_SH_DIR": {
             FeatureVolumeType.CONTAINED: None,
             FeatureVolumeType.SHARED: pathlib.Path(
@@ -116,7 +113,6 @@ FEATURE_CONFIGS = {
             .expanduser()
             .as_posix(),
         }[FeatureVolumeType.SHARED],
-
         "TELEPORT_CERT": {
             #################################################################
             # Certificates directory
@@ -130,7 +126,6 @@ FEATURE_CONFIGS = {
             .expanduser()
             .as_posix(),
         }[FeatureVolumeType.SHARED],
-
         # Todo:
         #  - [x] find a dynamic way to fetch all services with the correct ports etc.
         #

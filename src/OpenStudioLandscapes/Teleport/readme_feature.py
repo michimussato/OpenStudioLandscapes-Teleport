@@ -100,7 +100,7 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
     doc.add_paragraph(
         text=textwrap.dedent(
             """
-            `OpenStudioLandscapes-Teleport` is based on the 
+            `OpenStudioLandscapes-Teleport` is based on the
             *Teleport Community Edition*.
             """
         )
@@ -201,7 +201,7 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
             """\
             User "admin" has been created but requires a password. Share this URL with the user to complete user setup, link is valid for 1h:
             https://teleport.yourdomain.com:443/web/invite/f25e44d67778cd48a39db3afe87f5174
-            
+
             NOTE: Make sure teleport.yourdomain.com:443 points at a Teleport proxy which users can access.\
 """
         ),
@@ -269,7 +269,7 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
         code=textwrap.dedent(
             """\
             TELEPORT_FQDN=teleport.yourdomain.com
-            
+
             tsh login --proxy=${TELEPORT_FQDN} --user=admin\
 """
         ),
@@ -371,7 +371,7 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
             [Unit]
             Description=Teleport Service
             After=network.target
-            
+
             [Service]
             Type=simple
             Restart=always
@@ -384,7 +384,7 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
             ExecReload=/bin/sh -c "exec pkill -HUP -L -F ${HOME}/teleport/teleport.pid"
             PIDFile=${HOME}/teleport/teleport.pid
             LimitNOFILE=524288
-            
+
             [Install]
             # Todo:
             #  ::Unit ${HOME}/.config/systemd/user/teleport.service is added as a dependency to a non-existent unit multi-user.target.

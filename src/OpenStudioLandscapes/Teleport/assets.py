@@ -410,8 +410,12 @@ def teleport_yaml(
         app_ = copy.deepcopy(app_default_dict)
         app_["name"] = service
         app_["uri"] = f"http://localhost:3000/"
-        app_["public_addr"] = f"{service}.{service_name}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}"
-        app_["rewrite"]["redirect"].append(f"{service}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}")
+        app_[
+            "public_addr"
+        ] = f"{service}.{service_name}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}"
+        app_["rewrite"]["redirect"].append(
+            f"{service}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}"
+        )
 
         apps.append(app_)
 
@@ -422,8 +426,12 @@ def teleport_yaml(
         app_ = copy.deepcopy(app_default_dict)
         app_["name"] = service
         app_["uri"] = f"http://localhost:80/"
-        app_["public_addr"] = f"{service}.{service_name}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}"
-        app_["rewrite"]["redirect"].append(f"{service}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}")
+        app_[
+            "public_addr"
+        ] = f"{service}.{service_name}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}"
+        app_["rewrite"]["redirect"].append(
+            f"{service}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}"
+        )
 
         apps.append(app_)
 
