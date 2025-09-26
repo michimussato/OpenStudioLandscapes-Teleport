@@ -12,6 +12,7 @@ from dagster import (
     AssetIn,
     AssetKey,
     AssetMaterialization,
+    EnvVar,
     MetadataValue,
     Output,
     asset,
@@ -401,6 +402,66 @@ def teleport_yaml(
         )
 
         apps.append(app_)
+
+    publish_openstudiolandscapes_dagster = True
+
+    if publish_openstudiolandscapes_dagster:
+        service = "openstudiolandscapes-dagster"
+        app_ = copy.deepcopy(app_default_dict)
+        app_["name"] = service
+        app_["uri"] = f"http://localhost:3000/"
+        app_["public_addr"] = f"{service}.{service_name}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}"
+        app_["rewrite"]["redirect"].append(f"{service}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}")
+
+        apps.append(app_)
+
+    publish_openstudiolandscapes_harbor = True
+
+    if publish_openstudiolandscapes_harbor:
+        service = "openstudiolandscapes-harbor"
+        app_ = copy.deepcopy(app_default_dict)
+        app_["name"] = service
+        app_["uri"] = f"http://localhost:80/"
+        app_["public_addr"] = f"{service}.{service_name}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}"
+        app_["rewrite"]["redirect"].append(f"{service}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}")
+
+        apps.append(app_)
+
+    # publish_openstudiolandscapes_pihole = False
+    #
+    # if publish_openstudiolandscapes_pihole:
+    #     service = "openstudiolandscapes-pihole"
+    #     app_ = copy.deepcopy(app_default_dict)
+    #     app_["name"] = service
+    #     app_["uri"] = f"http://localhost:80/"
+    #     app_["public_addr"] = f"{service}.{service_name}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}"
+    #     app_["rewrite"]["redirect"].append(f"{service}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}")
+    #
+    #     apps.append(app_)
+
+    # publish_openstudiolandscapes_jellyfin = False
+    #
+    # if publish_openstudiolandscapes_jellyfin:
+    #     service = "openstudiolandscapes-jellyfin"
+    #     app_ = copy.deepcopy(app_default_dict)
+    #     app_["name"] = service
+    #     app_["uri"] = f"http://pi-hole.farm.evil:80/"
+    #     app_["public_addr"] = f"{service}.{service_name}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}"
+    #     app_["rewrite"]["redirect"].append(f"{service}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}")
+    #
+    #     apps.append(app_)
+
+    # publish_openstudiolandscapes_transmission = False
+    #
+    # if publish_openstudiolandscapes_transmission:
+    #     service = "openstudiolandscapes-transmission"
+    #     app_ = copy.deepcopy(app_default_dict)
+    #     app_["name"] = service
+    #     app_["uri"] = f"http://transmission.farm.evil:9091/"
+    #     app_["public_addr"] = f"{service}.{service_name}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}"
+    #     app_["rewrite"]["redirect"].append(f"{service}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}")
+    #
+    #     apps.append(app_)
 
     # Reference:
     # #
