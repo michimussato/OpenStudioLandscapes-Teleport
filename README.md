@@ -18,7 +18,8 @@
    1. [Teleport](#teleport)
       1. [Feature Matrix](#feature-matrix)
       2. [Requirements](#requirements)
-      3. [Usage](#usage)
+      3. [Configuration](#configuration)
+      4. [Usage](#usage)
 
 ***
 
@@ -231,6 +232,10 @@ Here you can find some [basic user guides](https://goteleport.com/docs/connect-y
 - [`tsh`](https://goteleport.com/docs/reference/cli/tsh/)
 - [`teleport`](https://goteleport.com/docs/reference/cli/teleport/)
 
+### Configuration
+
+Here you can find out more about the [`teleport.yaml`](https://goteleport.com/docs/reference/deployment/config/) configuration file.
+
 ### Usage
 
 #### Create a User
@@ -261,7 +266,7 @@ https://teleport.yourdomain.com:443/web/invite/f25e44d67778cd48a39db3afe87f5174
 NOTE: Make sure teleport.yourdomain.com:443 points at a Teleport proxy which users can access.
 ```
 
-Go ahead and visite the linke you're presented with and register your mobile device for Multi-Factor Authentication.
+Go ahead and visit the link you're presented with and register your mobile device for Multi-Factor Authentication.
 
 After a user has been created, you can proceed with the following steps.
 
@@ -269,16 +274,55 @@ All subsequent steps are being performed from your local machine.
 
 #### Guides
 
+##### Generate SSL Certificates
+
+SSL, certificates and the web can cause headaches. I'm not an expert in web technology to say the least. For my own sanity (and yours too, hopefully) I have integrated SSL certificate creation into `OpenStudioLandscapes` by packing the most necessary tools and commands into `nox` sessions. We make use of the ready made `acme.sh` Docker image and interact with it directly.
+
+Something important to keep in mind while doing so: the CA (Certificate Authority, i. e. Let's Encrypt) relies on port 80 to be open on your firewall and that `acme.sh`'s `nignx` is reachable on this port. Otherwise, your domain ownership can not be verified.
+
+`OpenStudioLandscapes` Harbor also listens on port 80 which will conflict with `nginx` from `acme.sh`. So, while setting up the certificates with `nox` and `acme.sh`, make sure that Harbor (all `OpenStudioLandscapes` ideally) are shut down. See the [Guide](https://github.com/michimussato/OpenStudioLandscapes/blob/main/wiki/run_openstudiolandscapes/from_manual.md#with-harbor) for more information.
+
+```generic
+$ nox --list-sessions
+[...]
+- acme_sh_prepare -> Create acme.sh docker-compose.yml.
+- acme_sh_clear -> Clear acme.sh with `sudo`. WARNING: DATA LOSS!
+- acme_sh_up_detach -> Start acme.sh container in detached mode
+- acme_sh_print_help -> Print acme.sh help inside running container
+- acme_sh_down -> Stop acme.sh container
+- acme_sh_register_account -> Register account inside running container
+- acme_sh_create_certificate -> Register account inside running container
+[...]
+```
+
+The following example domain with associated sub-domains have to be registered and the DNS records have to point to the (WAN) IP where `nginx` is listening.
+
+The DNS hoster has to support wildcards for now for everything to work properly. Besides that, the automated certificate creation process requires API access to the DNS server. Both features _can_ be paid features. I, for my part, decided to continue with [ClouDNS.net](https://www.cloudns.net). I subscribed to the [Premium S Model](https://www.cloudns.net/premium/) which is very affordable. Going this extra mile easily compensates for the headache caused by other (free or not) approaches.
+
+My DNS records look as follows:
+
+```generic
+mydomain.cloud-ip.cc                    A       <MY ROUTERS IP>
+teleport.mydomain.cloud-ip.cc           CNAME   mydomain.cloud-ip.cc
+*.teleport.mydomain.cloud-ip.cc         CNAME   teleport.mydomain.cloud-ip.cc
+```
+
+API access can be granted in the [API Settings Page](https://www.cloudns.net/api-settings/).
+
 ##### Start Over
 
 ```shell
 tsh logout
-sudo rm -rf /var/lib/teleport
-sudo rm /etc/teleport.yaml
-rm -rf ~/.config/teleport/*
+systemctl --user disable --now teleport
+rm -rf ${HOME}/.config/teleport/*
+rm -rf ${HOME}/.local/share/teleport
+rm ${HOME}/.config/systemd/teleport.service
+systemctl --user daemon-reload
 ```
 
 ##### Register SSH Server
+
+The following guide was assembled by following the step outlined in the [Server Access Getting Started Guide](https://goteleport.com/docs/enroll-resources/server-access/getting-started/).
 
 ###### Login
 
@@ -330,7 +374,7 @@ teleport start --config="${HOME}/.config/teleport/teleport.yaml"
 To setup `teleport` with `systemd` in `--user` space:
 
 ```shell
-cat > ${HOME}/.config/systemd/teleport.service2 << "EOF"
+cat > ${HOME}/.config/systemd/teleport.service << "EOF"
 [Unit]
 Description=Teleport Service
 After=network.target
@@ -357,7 +401,6 @@ EOF
 
 ```shell
 systemctl --user daemon-reload
-systemctl --user enable teleport
-systemctl --user start teleport
+systemctl --user enable --now teleport
 # Display logs with `journalctl --user -fu teleport`
 ```
