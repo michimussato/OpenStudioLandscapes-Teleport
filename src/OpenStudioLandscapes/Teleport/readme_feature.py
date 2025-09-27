@@ -267,7 +267,7 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
             SSL, certificates and the web can cause headaches. I'm not an expert in
             web technology to say the least. For my own sanity (and yours too, hopefully)
             I have integrated SSL certificate creation into `OpenStudioLandscapes` by
-            packing the most necessary tools and commands into `nox` sessions. 
+            packing the most necessary tools and commands into `nox` sessions.
             We make use of the ready made `acme.sh` Docker image and interact with it
             directly.
             """
@@ -277,9 +277,9 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
     doc.add_paragraph(
         text=textwrap.dedent(
             """
-            Something important to keep in mind while doing so: the CA 
+            Something important to keep in mind while doing so: the CA
             (Certificate Authority, i. e. Let's Encrypt) relies on port
-            80 to be open on your firewall and that `acme.sh`'s `nignx` 
+            80 to be open on your firewall and that `acme.sh`'s `nignx`
             is reachable on this port. Otherwise, your domain ownership
             can not be verified.
             """
@@ -290,8 +290,8 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
         text=textwrap.dedent(
             """
             `OpenStudioLandscapes` Harbor also listens on port 80 which will
-            conflict with `nginx` from `acme.sh`. So, while setting up the 
-            certificates with `nox` and `acme.sh`, make sure that Harbor 
+            conflict with `nginx` from `acme.sh`. So, while setting up the
+            certificates with `nox` and `acme.sh`, make sure that Harbor
             (all `OpenStudioLandscapes` ideally) are shut down.
             See the [Guide](https://github.com/michimussato/OpenStudioLandscapes/blob/main/wiki/run_openstudiolandscapes/from_manual.md#with-harbor)
             for more information.
@@ -331,10 +331,10 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
         text=textwrap.dedent(
             """
             The DNS hoster has to support wildcards for now for everything
-            to work properly. Besides that, the automated certificate 
-            creation process requires API access to the DNS server. 
+            to work properly. Besides that, the automated certificate
+            creation process requires API access to the DNS server.
             Both features _can_ be paid features. I, for my part, decided to
-            continue with [ClouDNS.net](https://www.cloudns.net). 
+            continue with [ClouDNS.net](https://www.cloudns.net).
             I subscribed to the [Premium S Model](https://www.cloudns.net/premium/)
             which is very affordable. Going this extra mile easily compensates for
             the headache caused by other (free or not) approaches.
@@ -379,9 +379,9 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
             """\
             tsh logout
             systemctl --user disable --now teleport
-            rm -rf ${HOME}/.config/teleport/*
-            rm -rf ${HOME}/.local/share/teleport
-            rm ${HOME}/.config/systemd/teleport.service
+            rm -rf "${HOME}/.config/teleport/*"
+            rm -rf "${HOME}/.local/share/teleport"
+            rm "${HOME}/.config/systemd/user/teleport.service"
             systemctl --user daemon-reload\
 """
         ),
@@ -470,7 +470,7 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
                 --data-dir=${HOME}/.local/share/teleport \\
                 --output=file://${HOME}/.config/teleport/teleport.yaml \\
                 --token=${HOME}/.config/teleport/teleport_token \\
-                --proxy=teleport.yourdomain.com:443\
+                --proxy=${TELEPORT_FQDN}:443\
 """
         ),
         lang="shell",
@@ -509,7 +509,7 @@ def readme_feature(doc: snakemd.Document) -> snakemd.Document:
     doc.add_code(
         code=textwrap.dedent(
             """\
-            cat > ${HOME}/.config/systemd/teleport.service << "EOF"
+            cat > ${HOME}/.config/systemd/user/teleport.service << "EOF"
             [Unit]
             Description=Teleport Service
             After=network.target
