@@ -91,7 +91,7 @@ FEATURE_CONFIGS = {
             )
             .expanduser()
             .as_posix(),
-        }[FeatureVolumeType.SHARED],
+        }[FeatureVolumeType.CONTAINED],
         "TELEPORT_DATA": {
             FeatureVolumeType.CONTAINED: pathlib.Path(
                 "{DOT_LANDSCAPES}",
