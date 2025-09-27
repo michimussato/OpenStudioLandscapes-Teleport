@@ -91,7 +91,7 @@ FEATURE_CONFIGS = {
             )
             .expanduser()
             .as_posix(),
-        }[FeatureVolumeType.CONTAINED],
+        }[FeatureVolumeType.SHARED],
         "TELEPORT_DATA": {
             FeatureVolumeType.CONTAINED: pathlib.Path(
                 "{DOT_LANDSCAPES}",
@@ -104,14 +104,14 @@ FEATURE_CONFIGS = {
             .as_posix(),
             FeatureVolumeType.SHARED: pathlib.Path(
                 "{DOT_LANDSCAPES}",
-                ".shared_volumes",
+                "{DOT_SHARED_VOLUMES}",
                 f"{GROUP}__{'__'.join(KEY)}",
                 "volumes",
                 "data",
             )
             .expanduser()
             .as_posix(),
-        }[FeatureVolumeType.CONTAINED],
+        }[FeatureVolumeType.SHARED],
         "ACME_SH_DIR": {
             FeatureVolumeType.CONTAINED: None,
             FeatureVolumeType.SHARED: pathlib.Path(

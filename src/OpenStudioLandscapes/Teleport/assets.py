@@ -333,8 +333,7 @@ def certificates(
 
 @asset(
     **ASSET_HEADER,
-    ins={
-    },
+    ins={},
     description="",
 )
 def app_dict_default(
@@ -799,7 +798,7 @@ def teleport_yaml(
                 # Using in HA can lead to too many failed authorizations and a lock-up
                 # of the ACME process (https://letsencrypt.org/docs/failed-validation-limit/)
                 "enabled": False,
-                "email": EnvVar("OPENSTUDIOLANDSCAPES__DOMAIN_EMAIL").get_value()
+                "email": EnvVar("OPENSTUDIOLANDSCAPES__DOMAIN_EMAIL").get_value(),
             },
             "listen_addr": f"0.0.0.0:{env['ALL_CLIENTS_PORT_CONTAINER']}",
             "web_listen_addr": f"0.0.0.0:{env['WEB_UI_PORT_CONTAINER']}",
@@ -1282,8 +1281,6 @@ def cmd_create_teleport_admin(
 
     https://tomerklein.dev/setting-up-teleport-for-secure-server-access-d4d317c1c4ca
     """
-
-    context.log.info(compose_teleport.keys())
 
     container_name = compose_teleport["services"]["teleport"]["container_name"]
 
