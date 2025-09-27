@@ -334,42 +334,15 @@ def certificates(
 @asset(
     **ASSET_HEADER,
     ins={
-        "env": AssetIn(
-            AssetKey([*ASSET_HEADER["key_prefix"], "env"]),
-        ),
-        "certificates": AssetIn(
-            AssetKey([*ASSET_HEADER["key_prefix"], "certificates"]),
-        ),
-        "fetch_services": AssetIn(
-            AssetKey([*ASSET_HEADER["key_prefix"], "fetch_services"]),
-        ),
     },
     description="",
 )
-def teleport_yaml(
+def app_dict_default(
     context: AssetExecutionContext,
-    env: dict,  # pylint: disable=redefined-outer-name
-    certificates: list[dict],  # pylint: disable=redefined-outer-name
-    fetch_services: dict,  # pylint: disable=redefined-outer-name
-) -> Generator[Output[pathlib.Path] | AssetMaterialization, None, None]:
-    """ """
-
-    service_name = SERVICE_NAME
-    # container_name = "--".join([service_name, env.get("LANDSCAPE", "default")])
-    host_name_lan = ".".join([service_name, env["OPENSTUDIOLANDSCAPES__DOMAIN_LAN"]])
-    host_name_wan = ".".join([service_name, env["OPENSTUDIOLANDSCAPES__DOMAIN_WAN"]])
-
-    host_names = [
-        # Todo
-        #  - [ ] separate lan domain(s) and wan domain(s)
-        # the order matters here.
-        # first: wan, secondary wan etc.
-        # then: lan
-        host_name_wan,
-        host_name_lan,
-    ]
-
-    host_name = host_names[0]
+) -> Generator[Output[MutableMapping] | AssetMaterialization, None, None]:
+    """
+    Based on https://goteleport.com/docs/reference/deployment/config/#application-service
+    """
 
     app_default_dict: dict = {
         "name": "",
@@ -388,88 +361,183 @@ def teleport_yaml(
         },
     }
 
+    yield Output(app_default_dict)
+
+    yield AssetMaterialization(
+        asset_key=context.asset_key,
+        metadata={
+            "__".join(context.asset_key.path): MetadataValue.json(app_default_dict),
+        },
+    )
+
+
+@asset(
+    **ASSET_HEADER,
+    ins={
+        "app_dict_default": AssetIn(
+            AssetKey([*ASSET_HEADER["key_prefix"], "app_dict_default"]),
+        ),
+    },
+    description="",
+)
+def static_apps(
+    context: AssetExecutionContext,
+    app_dict_default: dict,  # pylint: disable=redefined-outer-name
+) -> Generator[Output[List] | AssetMaterialization, None, None]:
+    """ """
+
+    static_apps_ = []
+
+    publish_openstudiolandscapes_dagster = True
+
+    if publish_openstudiolandscapes_dagster:
+        service = "openstudiolandscapes-dagster"
+        app_ = copy.deepcopy(app_dict_default)
+        app_["name"] = service
+        app_["uri"] = f"http://localhost:3000/"
+        app_[
+            "public_addr"
+        ] = f"{service}.{SERVICE_NAME}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}"
+        app_["rewrite"]["redirect"].append(
+            f"{service}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}"
+        )
+
+        static_apps_.append(app_)
+
+    publish_openstudiolandscapes_harbor = True
+
+    if publish_openstudiolandscapes_harbor:
+        service = "openstudiolandscapes-harbor"
+        app_ = copy.deepcopy(app_dict_default)
+        app_["name"] = service
+        app_["uri"] = f"http://localhost:80/"
+        app_[
+            "public_addr"
+        ] = f"{service}.{SERVICE_NAME}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}"
+        app_["rewrite"]["redirect"].append(
+            f"{service}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}"
+        )
+
+        static_apps_.append(app_)
+
+    # publish_openstudiolandscapes_pihole = False
+    #
+    # if publish_openstudiolandscapes_pihole:
+    #     service = "openstudiolandscapes-pihole"
+    #     app_ = copy.deepcopy(app_dict_default)
+    #     app_["name"] = service
+    #     app_["uri"] = f"http://localhost:80/"
+    #     app_["public_addr"] = f"{service}.{SERVICE_NAME}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}"
+    #     app_["rewrite"]["redirect"].append(f"{service}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}")
+    #
+    #     static_apps_.append(app_)
+
+    # publish_openstudiolandscapes_jellyfin = False
+    #
+    # if publish_openstudiolandscapes_jellyfin:
+    #     service = "openstudiolandscapes-jellyfin"
+    #     app_ = copy.deepcopy(app_dict_default)
+    #     app_["name"] = service
+    #     app_["uri"] = f"http://pi-hole.farm.evil:80/"
+    #     app_["public_addr"] = f"{service}.{SERVICE_NAME}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}"
+    #     app_["rewrite"]["redirect"].append(f"{service}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}")
+    #
+    #     static_apps_.append(app_)
+
+    # publish_openstudiolandscapes_transmission = False
+    #
+    # if publish_openstudiolandscapes_transmission:
+    #     service = "openstudiolandscapes-transmission"
+    #     app_ = copy.deepcopy(app_dict_default)
+    #     app_["name"] = service
+    #     app_["uri"] = f"http://transmission.farm.evil:9091/"
+    #     app_["public_addr"] = f"{service}.{SERVICE_NAME}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}"
+    #     app_["rewrite"]["redirect"].append(f"{service}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}")
+    #
+    #     static_apps_.append(app_)
+
+    yield Output(static_apps_)
+
+    yield AssetMaterialization(
+        asset_key=context.asset_key,
+        metadata={
+            "__".join(context.asset_key.path): MetadataValue.json(static_apps_),
+        },
+    )
+
+
+@asset(
+    **ASSET_HEADER,
+    ins={
+        "env": AssetIn(
+            AssetKey([*ASSET_HEADER["key_prefix"], "env"]),
+        ),
+        "certificates": AssetIn(
+            AssetKey([*ASSET_HEADER["key_prefix"], "certificates"]),
+        ),
+        "fetch_services": AssetIn(
+            AssetKey([*ASSET_HEADER["key_prefix"], "fetch_services"]),
+        ),
+        "app_dict_default": AssetIn(
+            AssetKey([*ASSET_HEADER["key_prefix"], "app_dict_default"]),
+        ),
+        "static_apps": AssetIn(
+            AssetKey([*ASSET_HEADER["key_prefix"], "static_apps"]),
+        ),
+    },
+    description="",
+)
+def teleport_yaml(
+    context: AssetExecutionContext,
+    env: dict,  # pylint: disable=redefined-outer-name
+    certificates: list[dict],  # pylint: disable=redefined-outer-name
+    fetch_services: dict,  # pylint: disable=redefined-outer-name
+    app_dict_default: dict,  # pylint: disable=redefined-outer-name
+    static_apps: list,  # pylint: disable=redefined-outer-name
+) -> Generator[Output[pathlib.Path] | AssetMaterialization, None, None]:
+    """
+    [Reference Configurations](https://goteleport.com/docs/reference/deployment/config/#reference-configurations)
+
+    Services References:
+    - [Instance-wide settings](https://goteleport.com/docs/reference/deployment/config/#instance-wide-settings)
+    - [Auth Service](https://goteleport.com/docs/reference/deployment/config/#auth-service)
+    - [SSH Service](https://goteleport.com/docs/reference/deployment/config/#ssh-service)
+    - [Proxy Service](https://goteleport.com/docs/reference/deployment/config/#proxy-service)
+    - [Application Service](https://goteleport.com/docs/reference/deployment/config/#application-service)
+    """
+
+    # container_name = "--".join([SERVICE_NAME, env.get("LANDSCAPE", "default")])
+    host_name_lan = ".".join([SERVICE_NAME, env["OPENSTUDIOLANDSCAPES__DOMAIN_LAN"]])
+    host_name_wan = ".".join([SERVICE_NAME, env["OPENSTUDIOLANDSCAPES__DOMAIN_WAN"]])
+
+    host_names = [
+        # Todo
+        #  - [ ] separate lan domain(s) and wan domain(s)
+        # the order matters here.
+        # first: wan, secondary wan etc.
+        # then: lan
+        host_name_wan,
+        host_name_lan,
+    ]
+
+    host_name = host_names[0]
+
     apps: list[dict] = []
 
     for feature, settings_teleport in fetch_services.items():
-        app_ = copy.deepcopy(app_default_dict)
+        app_ = copy.deepcopy(app_dict_default)
         app_["name"] = settings_teleport["teleport_host"]
         app_["uri"] = f"http://localhost:{settings_teleport['teleport_port']}/"
         app_[
             "public_addr"
-        ] = f"{settings_teleport['teleport_host']}.{service_name}.{settings_teleport['teleport_domain_wan']}"
+        ] = f"{settings_teleport['teleport_host']}.{SERVICE_NAME}.{settings_teleport['teleport_domain_wan']}"
         app_["rewrite"]["redirect"].append(
             f"{settings_teleport['teleport_host']}.{settings_teleport['teleport_domain_lan']}"
         )
 
         apps.append(app_)
 
-    publish_openstudiolandscapes_dagster = True
-
-    if publish_openstudiolandscapes_dagster:
-        service = "openstudiolandscapes-dagster"
-        app_ = copy.deepcopy(app_default_dict)
-        app_["name"] = service
-        app_["uri"] = f"http://localhost:3000/"
-        app_[
-            "public_addr"
-        ] = f"{service}.{service_name}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}"
-        app_["rewrite"]["redirect"].append(
-            f"{service}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}"
-        )
-
-        apps.append(app_)
-
-    publish_openstudiolandscapes_harbor = True
-
-    if publish_openstudiolandscapes_harbor:
-        service = "openstudiolandscapes-harbor"
-        app_ = copy.deepcopy(app_default_dict)
-        app_["name"] = service
-        app_["uri"] = f"http://localhost:80/"
-        app_[
-            "public_addr"
-        ] = f"{service}.{service_name}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}"
-        app_["rewrite"]["redirect"].append(
-            f"{service}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}"
-        )
-
-        apps.append(app_)
-
-    # publish_openstudiolandscapes_pihole = False
-    #
-    # if publish_openstudiolandscapes_pihole:
-    #     service = "openstudiolandscapes-pihole"
-    #     app_ = copy.deepcopy(app_default_dict)
-    #     app_["name"] = service
-    #     app_["uri"] = f"http://localhost:80/"
-    #     app_["public_addr"] = f"{service}.{service_name}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}"
-    #     app_["rewrite"]["redirect"].append(f"{service}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}")
-    #
-    #     apps.append(app_)
-
-    # publish_openstudiolandscapes_jellyfin = False
-    #
-    # if publish_openstudiolandscapes_jellyfin:
-    #     service = "openstudiolandscapes-jellyfin"
-    #     app_ = copy.deepcopy(app_default_dict)
-    #     app_["name"] = service
-    #     app_["uri"] = f"http://pi-hole.farm.evil:80/"
-    #     app_["public_addr"] = f"{service}.{service_name}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}"
-    #     app_["rewrite"]["redirect"].append(f"{service}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}")
-    #
-    #     apps.append(app_)
-
-    # publish_openstudiolandscapes_transmission = False
-    #
-    # if publish_openstudiolandscapes_transmission:
-    #     service = "openstudiolandscapes-transmission"
-    #     app_ = copy.deepcopy(app_default_dict)
-    #     app_["name"] = service
-    #     app_["uri"] = f"http://transmission.farm.evil:9091/"
-    #     app_["public_addr"] = f"{service}.{service_name}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}"
-    #     app_["rewrite"]["redirect"].append(f"{service}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}")
-    #
-    #     apps.append(app_)
+    apps.extend(static_apps)
 
     # Reference:
     # #
@@ -659,7 +727,6 @@ def teleport_yaml(
 
     teleport_yaml_dict = {
         "version": "v3",
-        # https://github.com/gravitational/teleport/discussions/25318
         "teleport": {
             # https://goteleport.com/docs/reference/deployment/config/#instance-wide-settings
             "nodename": host_name,
@@ -682,23 +749,22 @@ def teleport_yaml(
         "auth_service": {
             # https://goteleport.com/docs/reference/deployment/config/#auth-service
             "enabled": "yes",
-            # "listen_addr": f"0.0.0.0:{env['PROXY_SERVICE_AGENTS_PORT_CONTAINER']}",
-            "listen_addr": f"0.0.0.0:3025",
+            "listen_addr": f"0.0.0.0:{env['PROXY_SERVICE_AGENTS_PORT_CONTAINER']}",
             "proxy_listener_mode": "multiplex",
         },
         # Server Access
         # https://goteleport.com/docs/enroll-resources/server-access/getting-started/
         "ssh_service": {
             # https://goteleport.com/docs/reference/deployment/config/#ssh-service
-            "enabled": False,
+            "enabled": False,  # Run locally?
             # "listen_addr": f"0.0.0.0:{env['LISTEN_ADDRESS_HOST']}",
             # # "listen_addr": f"192.168.178.195:22",
             # "public_addr": [
             #     # https://goteleport.com/docs/zero-trust-access/deploy-a-cluster/separate-proxy-service-endpoints/
             #     # External FQDN(s)
             #     *[f"{i}:{env['LISTEN_ADDRESS_HOST']}" for i in host_names]
-            #     # f"{service_name}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}:{env['WEB_UI_PORT_CONTAINER']}",
-            #     # f"{service_name}.openstudiolandscapes.cloud-ip.cc:{env['WEB_UI_PORT_CONTAINER']}",
+            #     # f"{SERVICE_NAME}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}:{env['WEB_UI_PORT_CONTAINER']}",
+            #     # f"{SERVICE_NAME}.openstudiolandscapes.cloud-ip.cc:{env['WEB_UI_PORT_CONTAINER']}",
             #     # Internal FQDN
             #     # f"{host_name}:{env['WEB_UI_PORT_CONTAINER']}",
             # ],
@@ -714,36 +780,34 @@ def teleport_yaml(
             # }],
             "https_keypairs": https_keypairs,
             "https_keypairs_reload_interval": "120s",
-            # acme uses TLS_ALPN-01 challenge and does not seem to be able to handle
-            # DNS-01 challenges nor can we specify custom domains manually so this
-            # is a bit crippled.
-            # https://letsencrypt.org/docs/challenge-types/
-            # We use nox for now and specify the mounted https_keypairs.
-            # "acme": {
-            #     # Get an automatic certificate from Letsencrypt.org using ACME via
-            #     # TLS_ALPN-01 challenge.
-            #     # When using ACME, the 'proxy_service' must be publicly accessible over
-            #     # port 443.
-            #     # Also set using the CLI command:
-            #     # 'teleport configure --acme --acme-email=email@example.com \
-            #     # --cluster-name=tele.example.com -o file'
-            #     # This should NOT be enabled in a highly available Teleport deployment
-            #     # Using in HA can lead to too many failed authorizations and a lock-up
-            #     # of the ACME process (https://letsencrypt.org/docs/failed-validation-limit/)
-            #     "enabled": "yes",
-            #     "email": EnvVar("OPENSTUDIOLANDSCAPES__DOMAIN_EMAIL").get_value()
-            # },
+            "acme": {
+                # acme in Teleport:
+                # acme uses TLS_ALPN-01 challenge and does not seem to be able to handle
+                # DNS-01 challenges nor can we specify custom domains manually so this
+                # is a bit crippled.
+                # https://letsencrypt.org/docs/challenge-types/
+                # We use nox for now and specify the mounted https_keypairs.
+                #
+                # Get an automatic certificate from Letsencrypt.org using ACME via
+                # TLS_ALPN-01 challenge.
+                # When using ACME, the 'proxy_service' must be publicly accessible over
+                # port 443.
+                # Also set using the CLI command:
+                # 'teleport configure --acme --acme-email=email@example.com \
+                # --cluster-name=tele.example.com -o file'
+                # This should NOT be enabled in a highly available Teleport deployment
+                # Using in HA can lead to too many failed authorizations and a lock-up
+                # of the ACME process (https://letsencrypt.org/docs/failed-validation-limit/)
+                "enabled": False,
+                "email": EnvVar("OPENSTUDIOLANDSCAPES__DOMAIN_EMAIL").get_value()
+            },
             "listen_addr": f"0.0.0.0:{env['ALL_CLIENTS_PORT_CONTAINER']}",
             "web_listen_addr": f"0.0.0.0:{env['WEB_UI_PORT_CONTAINER']}",
-            "tunnel_listen_addr": "0.0.0.0:3024",
+            "tunnel_listen_addr": f"0.0.0.0:{env['PROXY_SERVICE_TUNNEL_LISTEN_ADDRESS_PORT_CONTAINER']}",
             "public_addr": [
                 # https://goteleport.com/docs/zero-trust-access/deploy-a-cluster/separate-proxy-service-endpoints/
-                # External FQDN(s)
+                # External FQDN(s) first, Internal FQDN(s) last
                 *[f"{i}:{env['WEB_UI_PORT_CONTAINER']}" for i in host_names]
-                # f"{service_name}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}:{env['WEB_UI_PORT_CONTAINER']}",
-                # f"{service_name}.openstudiolandscapes.cloud-ip.cc:{env['WEB_UI_PORT_CONTAINER']}",
-                # Internal FQDN
-                # f"{host_name}:{env['WEB_UI_PORT_CONTAINER']}",
             ],
         },
         "app_service": {
@@ -819,13 +883,10 @@ def compose_teleport(
         network_dict = {"networks": list(compose_networks.get("networks", {}).keys())}
         ports_dict = {
             "ports": [
-                # # f"{env['ALL_CLIENTS_PORT_HOST']}:{env['ALL_CLIENTS_PORT_CONTAINER']}",
-                # f"{env['PROXY_SERVICE_AGENTS_PORT_HOST']}:{env['PROXY_SERVICE_AGENTS_PORT_CONTAINER']}",
-                # f"{env['WEB_UI_PORT_HOST']}:{env['WEB_UI_PORT_CONTAINER']}",
-                "3025:3025",
-                "3023:3023",
-                "3080:3080",
-                "3024:3024",
+                f"{env['ALL_CLIENTS_PORT_HOST']}:{env['ALL_CLIENTS_PORT_CONTAINER']}",
+                f"{env['PROXY_SERVICE_AGENTS_PORT_HOST']}:{env['PROXY_SERVICE_AGENTS_PORT_CONTAINER']}",
+                f"{env['WEB_UI_PORT_HOST']}:{env['WEB_UI_PORT_CONTAINER']}",
+                f"{env['PROXY_SERVICE_TUNNEL_LISTEN_ADDRESS_PORT_HOST']}:{env['PROXY_SERVICE_TUNNEL_LISTEN_ADDRESS_PORT_CONTAINER']}",
             ]
         }
     elif "network_mode" in compose_networks:
@@ -879,13 +940,12 @@ def compose_teleport(
 
     command = []
 
-    service_name = SERVICE_NAME
-    container_name = "--".join([service_name, env.get("LANDSCAPE", "default")])
-    host_name = ".".join([service_name, env["OPENSTUDIOLANDSCAPES__DOMAIN_LAN"]])
+    container_name = "--".join([SERVICE_NAME, env.get("LANDSCAPE", "default")])
+    host_name = ".".join([SERVICE_NAME, env["OPENSTUDIOLANDSCAPES__DOMAIN_LAN"]])
 
     docker_dict = {
         "services": {
-            service_name: {
+            SERVICE_NAME: {
                 "container_name": container_name,
                 "hostname": host_name,
                 "domainname": env.get("OPENSTUDIOLANDSCAPES__DOMAIN_LAN"),
@@ -913,14 +973,19 @@ def compose_teleport(
                 # },
                 # "command": command,
                 "entrypoint": [
-                    #      - "/usr/bin/dumb-init"
-                    #      - "--help"
                     "/usr/bin/dumb-init",
-                    "/usr/local/bin/teleport",
-                    "start",
-                    "-c",
-                    "/etc/teleport/teleport.yaml",
-                    # "--insecure",
+                    *[
+                        [
+                            "--help",
+                        ],
+                        [
+                            "/usr/local/bin/teleport",
+                            "start",
+                            "-c",
+                            "/etc/teleport/teleport.yaml",
+                            # "--insecure",
+                        ],
+                    ][1],
                 ],
             },
         },
@@ -961,173 +1026,7 @@ def compose_teleport(
 #     # teleport_yaml: pathlib.Path,  # pylint: disable=redefined-outer-name
 # ) -> Generator[Output[dict] | AssetMaterialization, None, None]:
 #     """
-#     https://github.com/acmesh-official/acme.sh/wiki/Run-acme.sh-in-docker#3-run-acmesh-as-a-docker-daemon
-#     ```
-#     docker exec acme.sh --help
-#     # Register account
-#     acme.sh --register-account -m michimussato@gmail.com
-#     # validation type http-01:
-#     acme.sh --issue -d openstudiolandscapes.mywire.org -d teleport.openstudiolandscapes.mywire.org --standalone
-#     # Todo:
-#     # validation type dns-01:
-#     acme.sh --issue -d openstudiolandscapes.mywire.org -d *.openstudiolandscapes.mywire.org --standalone
-#     ```
 #
-#     ```
-#     # acme.sh --help
-#     https://github.com/acmesh-official/acme.sh
-#     v3.1.2
-#     Usage: acme.sh <command> ... [parameters ...]
-#     Commands:
-#       -h, --help               Show this help message.
-#       -v, --version            Show version info.
-#       --install                Install acme.sh to your system.
-#       --uninstall              Uninstall acme.sh, and uninstall the cron job.
-#       --upgrade                Upgrade acme.sh to the latest code from https://github.com/acmesh-official/acme.sh.
-#       --issue                  Issue a cert.
-#       --deploy                 Deploy the cert to your server.
-#       -i, --install-cert       Install the issued cert to Apache/nginx or any other server.
-#       -r, --renew              Renew a cert.
-#       --renew-all              Renew all the certs.
-#       --revoke                 Revoke a cert.
-#       --remove                 Remove the cert from list of certs known to acme.sh.
-#       --list                   List all the certs.
-#       --info                   Show the acme.sh configs, or the configs for a domain with [-d domain] parameter.
-#       --to-pkcs12              Export the certificate and key to a pfx file.
-#       --to-pkcs8               Convert to pkcs8 format.
-#       --sign-csr               Issue a cert from an existing csr.
-#       --show-csr               Show the content of a csr.
-#       -ccr, --create-csr       Create CSR, professional use.
-#       --create-domain-key      Create an domain private key, professional use.
-#       --update-account         Update account info.
-#       --register-account       Register account key.
-#       --deactivate-account     Deactivate the account.
-#       --create-account-key     Create an account private key, professional use.
-#       --install-cronjob        Install the cron job to renew certs, you don't need to call this. The 'install' command can automatically install the cron job.
-#       --uninstall-cronjob      Uninstall the cron job. The 'uninstall' command can do this automatically.
-#       --cron                   Run cron job to renew all the certs.
-#       --set-notify             Set the cron notification hook, level or mode.
-#       --deactivate             Deactivate the domain authz, professional use.
-#       --set-default-ca         Used with '--server', Set the default CA to use.
-#                                See: https://github.com/acmesh-official/acme.sh/wiki/Server
-#       --set-default-chain      Set the default preferred chain for a CA.
-#                                See: https://github.com/acmesh-official/acme.sh/wiki/Preferred-Chain
-#
-#
-#     Parameters:
-#       -d, --domain <domain.tld>         Specifies a domain, used to issue, renew or revoke etc.
-#       --challenge-alias <domain.tld>    The challenge domain alias for DNS alias mode.
-#                                           See: https://github.com/acmesh-official/acme.sh/wiki/DNS-alias-mode
-#
-#       --domain-alias <domain.tld>       The domain alias for DNS alias mode.
-#                                           See: https://github.com/acmesh-official/acme.sh/wiki/DNS-alias-mode
-#
-#       --preferred-chain <chain>         If the CA offers multiple certificate chains, prefer the chain with an issuer matching this Subject Common Name.
-#                                           If no match, the default offered chain will be used. (default: empty)
-#                                           See: https://github.com/acmesh-official/acme.sh/wiki/Preferred-Chain
-#
-#       --valid-to    <date-time>         Request the NotAfter field of the cert.
-#                                           See: https://github.com/acmesh-official/acme.sh/wiki/Validity
-#       --valid-from  <date-time>         Request the NotBefore field of the cert.
-#                                           See: https://github.com/acmesh-official/acme.sh/wiki/Validity
-#
-#       -f, --force                       Force install, force cert renewal or override sudo restrictions.
-#       --staging, --test                 Use staging server, for testing.
-#       --debug [0|1|2|3]                 Output debug info. Defaults to 2 if argument is omitted.
-#       --output-insecure                 Output all the sensitive messages.
-#                                           By default all the credentials/sensitive messages are hidden from the output/debug/log for security.
-#       -w, --webroot <directory>         Specifies the web root folder for web root mode.
-#       --standalone                      Use standalone mode.
-#       --alpn                            Use standalone alpn mode.
-#       --stateless                       Use stateless mode.
-#                                           See: https://github.com/acmesh-official/acme.sh/wiki/Stateless-Mode
-#
-#       --apache                          Use Apache mode.
-#       --dns [dns_hook]                  Use dns manual mode or dns api. Defaults to manual mode when argument is omitted.
-#                                           See: https://github.com/acmesh-official/acme.sh/wiki/dnsapi
-#
-#       --dnssleep <seconds>              The time in seconds to wait for all the txt records to propagate in dns api mode.
-#                                           It's not necessary to use this by default, acme.sh polls dns status by DOH automatically.
-#       -k, --keylength <bits>            Specifies the domain key length: 2048, 3072, 4096, 8192 or ec-256, ec-384, ec-521.
-#       -ak, --accountkeylength <bits>    Specifies the account key length: 2048, 3072, 4096
-#       --log [file]                      Specifies the log file. Defaults to "/acme.sh/acme.sh.log" if argument is omitted.
-#       --log-level <1|2>                 Specifies the log level, default is 2.
-#       --syslog <0|3|6|7>                Syslog level, 0: disable syslog, 3: error, 6: info, 7: debug.
-#       --eab-kid <eab_key_id>            Key Identifier for External Account Binding.
-#       --eab-hmac-key <eab_hmac_key>     HMAC key for External Account Binding.
-#
-#
-#       These parameters are to install the cert to nginx/Apache or any other server after issue/renew a cert:
-#
-#       --cert-file <file>                Path to copy the cert file to after issue/renew.
-#       --key-file <file>                 Path to copy the key file to after issue/renew.
-#       --ca-file <file>                  Path to copy the intermediate cert file to after issue/renew.
-#       --fullchain-file <file>           Path to copy the fullchain cert file to after issue/renew.
-#       --reloadcmd <command>             Command to execute after issue/renew to reload the server.
-#
-#       --server <server_uri>             ACME Directory Resource URI. (default: https://acme.zerossl.com/v2/DV90)
-#                                           See: https://github.com/acmesh-official/acme.sh/wiki/Server
-#
-#       --accountconf <file>              Specifies a customized account config file.
-#       --home <directory>                Specifies the home dir for acme.sh.
-#       --cert-home <directory>           Specifies the home dir to save all the certs.
-#       --config-home <directory>         Specifies the home dir to save all the configurations.
-#       --useragent <string>              Specifies the user agent string. it will be saved for future use too.
-#       -m, --email <email>               Specifies the account email, only valid for the '--install' and '--update-account' command.
-#       --accountkey <file>               Specifies the account key path, only valid for the '--install' command.
-#       --days <ndays>                    Specifies the days to renew the cert when using '--issue' command. The default value is 60 days.
-#       --httpport <port>                 Specifies the standalone listening port. Only valid if the server is behind a reverse proxy or load balancer.
-#       --tlsport <port>                  Specifies the standalone tls listening port. Only valid if the server is behind a reverse proxy or load balancer.
-#       --local-address <ip>              Specifies the standalone/tls server listening address, in case you have multiple ip addresses.
-#       --listraw                         Only used for '--list' command, list the certs in raw format.
-#       -se, --stop-renew-on-error        Only valid for '--renew-all' command. Stop if one cert has error in renewal.
-#       --insecure                        Do not check the server certificate, in some devices, the api server's certificate may not be trusted.
-#       --ca-bundle <file>                Specifies the path to the CA certificate bundle to verify api server's certificate.
-#       --ca-path <directory>             Specifies directory containing CA certificates in PEM format, used by wget or curl.
-#       --no-cron                         Only valid for '--install' command, which means: do not install the default cron job.
-#                                           In this case, the certs will not be renewed automatically.
-#       --no-profile                      Only valid for '--install' command, which means: do not install aliases to user profile.
-#       --no-color                        Do not output color text.
-#       --force-color                     Force output of color text. Useful for non-interactive use with the aha tool for HTML E-Mails.
-#       --ecc                             Specifies use of the ECC cert. Only valid for '--install-cert', '--renew', '--remove ', '--revoke',
-#                                           '--deploy', '--to-pkcs8', '--to-pkcs12' and '--create-csr'.
-#       --csr <file>                      Specifies the input csr.
-#       --pre-hook <command>              Command to be run before obtaining any certificates.
-#       --post-hook <command>             Command to be run after attempting to obtain/renew certificates. Runs regardless of whether obtain/renew succeeded or failed.
-#       --renew-hook <command>            Command to be run after each successfully renewed certificate.
-#       --deploy-hook <hookname>          The hook file to deploy cert
-#       --extended-key-usage <string>     Manually define the CSR extended key usage value. The default is serverAuth,clientAuth.
-#       --ocsp, --ocsp-must-staple        Generate OCSP-Must-Staple extension.
-#       --always-force-new-domain-key     Generate new domain key on renewal. Otherwise, the domain key is not changed by default.
-#       --auto-upgrade [0|1]              Valid for '--upgrade' command, indicating whether to upgrade automatically in future. Defaults to 1 if argument is omitted.
-#       --listen-v4                       Force standalone/tls server to listen at ipv4.
-#       --listen-v6                       Force standalone/tls server to listen at ipv6.
-#       --openssl-bin <file>              Specifies a custom openssl bin location.
-#       --use-wget                        Force to use wget, if you have both curl and wget installed.
-#       --yes-I-know-dns-manual-mode-enough-go-ahead-please  Force use of dns manual mode.
-#                                           See:  https://github.com/acmesh-official/acme.sh/wiki/dns-manual-mode
-#
-#       -b, --branch <branch>             Only valid for '--upgrade' command, specifies the branch name to upgrade to.
-#       --notify-level <0|1|2|3>          Set the notification level:  Default value is 2.
-#                                           0: disabled, no notification will be sent.
-#                                           1: send notifications only when there is an error.
-#                                           2: send notifications when a cert is successfully renewed, or there is an error.
-#                                           3: send notifications when a cert is skipped, renewed, or error.
-#       --notify-mode <0|1>               Set notification mode. Default value is 0.
-#                                           0: Bulk mode. Send all the domain's notifications in one message(mail).
-#                                           1: Cert mode. Send a message for every single cert.
-#       --notify-hook <hookname>          Set the notify hook
-#       --notify-source <server name>     Set the server name in the notification message
-#       --revoke-reason <0-10>            The reason for revocation, can be used in conjunction with the '--revoke' command.
-#                                           See: https://github.com/acmesh-official/acme.sh/wiki/revokecert
-#
-#       --password <password>             Add a password to exported pfx file. Use with --to-pkcs12.
-#     ```
-#     """
-#
-#     # shlex.join escapes $, so this won't work
-#     # out of the box:
-#     # acme_exe = "$(which acme.sh)"
 #     acme_exe = "acme.sh"
 #
 #     cmd_register_account = [

@@ -45,19 +45,27 @@ FEATURE_CONFIGS = {
     OpenStudioLandscapesConfig.DEFAULT: {
         "DOCKER_USE_CACHE": DOCKER_USE_CACHE,
         "HOSTNAME": "teleport",
-        "TELEPORT_ENTRY_POINT_HOST": "",  # Either a hardcoded str or a ref to a Variable (with double {{ }}!)
-        "TELEPORT_ENTRY_POINT_PORT": "",  # Either a hardcoded str or a ref to a Variable (with double {{ }}!)
+        "TELEPORT_ENTRY_POINT_HOST": "{{HOSTNAME}}",  # Either a hardcoded str or a ref to a Variable (with double {{ }}!)
+        "TELEPORT_ENTRY_POINT_PORT": "{{WEB_UI_PORT_HOST}}",  # Either a hardcoded str or a ref to a Variable (with double {{ }}!)
         "COMPOSE_NETWORK_MODE": ComposeNetworkMode.HOST,
-        # :latest does not exist
-        # https://gallery.ecr.aws/gravitational
+        # Repository: https://gallery.ecr.aws/gravitational
+        # "latest" tag does not exist
         "DOCKER_IMAGE": "public.ecr.aws/gravitational/teleport-distroless-debug:18",
         # https://goteleport.com/docs/reference/networking/#auth-service-ports
         # auth Service:
+        "PROXY_SERVICE_TUNNEL_LISTEN_ADDRESS_PORT_HOST": "3024",
+        "PROXY_SERVICE_TUNNEL_LISTEN_ADDRESS_PORT_CONTAINER": "3024",
         "PROXY_SERVICE_AGENTS_PORT_HOST": "3025",
         "PROXY_SERVICE_AGENTS_PORT_CONTAINER": "3025",
         # https://goteleport.com/docs/reference/networking/#ports-without-tls-routing
-        "WEB_UI_PORT_HOST": "443",
-        "WEB_UI_PORT_CONTAINER": "443",
+        "WEB_UI_PORT_HOST": [
+            "443",
+            "3080",
+        ][0],
+        "WEB_UI_PORT_CONTAINER": [
+            "443",
+            "3080",
+        ][0],
         # proxy Service:
         "ALL_CLIENTS_PORT_HOST": "3023",
         "ALL_CLIENTS_PORT_CONTAINER": "3023",
