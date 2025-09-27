@@ -171,26 +171,28 @@ The following variables are being declared in `OpenStudioLandscapes.Teleport.con
 
 #### Feature Config: default
 
-| Variable                              | Type                 | Value                                                            |
-| :------------------------------------ | :------------------- | :--------------------------------------------------------------- |
-| `DOCKER_USE_CACHE`                    | `bool`               | `False`                                                          |
-| `HOSTNAME`                            | `str`                | `teleport`                                                       |
-| `TELEPORT_ENTRY_POINT_HOST`           | `str`                | ``                                                               |
-| `TELEPORT_ENTRY_POINT_PORT`           | `str`                | ``                                                               |
-| `COMPOSE_NETWORK_MODE`                | `ComposeNetworkMode` | `host`                                                           |
-| `DOCKER_IMAGE`                        | `str`                | `public.ecr.aws/gravitational/teleport-distroless-debug:18`      |
-| `PROXY_SERVICE_AGENTS_PORT_HOST`      | `str`                | `3025`                                                           |
-| `PROXY_SERVICE_AGENTS_PORT_CONTAINER` | `str`                | `3025`                                                           |
-| `WEB_UI_PORT_HOST`                    | `str`                | `443`                                                            |
-| `WEB_UI_PORT_CONTAINER`               | `str`                | `443`                                                            |
-| `ALL_CLIENTS_PORT_HOST`               | `str`                | `3023`                                                           |
-| `ALL_CLIENTS_PORT_CONTAINER`          | `str`                | `3023`                                                           |
-| `LISTEN_ADDRESS_HOST`                 | `str`                | `3022`                                                           |
-| `LISTEN_ADDRESS_CONTAINER`            | `str`                | `3022`                                                           |
-| `TELEPORT_CONFIG`                     | `str`                | `{DOT_LANDSCAPES}/{LANDSCAPE}/Teleport__Teleport/volumes/config` |
-| `TELEPORT_DATA`                       | `str`                | `{DOT_LANDSCAPES}/{LANDSCAPE}/Teleport__Teleport/volumes/data`   |
-| `ACME_SH_DIR`                         | `str`                | `{DOT_LANDSCAPES}/.acme.sh`                                      |
-| `TELEPORT_CERT`                       | `str`                | `{DOT_LANDSCAPES}/.acme.sh/certs`                                |
+| Variable                                             | Type                 | Value                                                                   |
+| :--------------------------------------------------- | :------------------- | :---------------------------------------------------------------------- |
+| `DOCKER_USE_CACHE`                                   | `bool`               | `False`                                                                 |
+| `HOSTNAME`                                           | `str`                | `teleport`                                                              |
+| `TELEPORT_ENTRY_POINT_HOST`                          | `str`                | `{{HOSTNAME}}`                                                          |
+| `TELEPORT_ENTRY_POINT_PORT`                          | `str`                | `{{WEB_UI_PORT_HOST}}`                                                  |
+| `COMPOSE_NETWORK_MODE`                               | `ComposeNetworkMode` | `host`                                                                  |
+| `DOCKER_IMAGE`                                       | `str`                | `public.ecr.aws/gravitational/teleport-distroless-debug:18`             |
+| `PROXY_SERVICE_TUNNEL_LISTEN_ADDRESS_PORT_HOST`      | `str`                | `3024`                                                                  |
+| `PROXY_SERVICE_TUNNEL_LISTEN_ADDRESS_PORT_CONTAINER` | `str`                | `3024`                                                                  |
+| `PROXY_SERVICE_AGENTS_PORT_HOST`                     | `str`                | `3025`                                                                  |
+| `PROXY_SERVICE_AGENTS_PORT_CONTAINER`                | `str`                | `3025`                                                                  |
+| `WEB_UI_PORT_HOST`                                   | `str`                | `443`                                                                   |
+| `WEB_UI_PORT_CONTAINER`                              | `str`                | `443`                                                                   |
+| `ALL_CLIENTS_PORT_HOST`                              | `str`                | `3023`                                                                  |
+| `ALL_CLIENTS_PORT_CONTAINER`                         | `str`                | `3023`                                                                  |
+| `LISTEN_ADDRESS_HOST`                                | `str`                | `3022`                                                                  |
+| `LISTEN_ADDRESS_CONTAINER`                           | `str`                | `3022`                                                                  |
+| `TELEPORT_CONFIG`                                    | `str`                | `{DOT_LANDSCAPES}/{LANDSCAPE}/Teleport__Teleport/volumes/config`        |
+| `TELEPORT_DATA`                                      | `str`                | `{DOT_LANDSCAPES}/{DOT_SHARED_VOLUMES}/Teleport__Teleport/volumes/data` |
+| `ACME_SH_DIR`                                        | `str`                | `{DOT_LANDSCAPES}/.acme.sh`                                             |
+| `TELEPORT_CERT`                                      | `str`                | `{DOT_LANDSCAPES}/.acme.sh/certs`                                       |
 
 # Community
 
@@ -314,9 +316,9 @@ API access can be granted in the [API Settings Page](https://www.cloudns.net/api
 ```shell
 tsh logout
 systemctl --user disable --now teleport
-rm -rf ${HOME}/.config/teleport/*
-rm -rf ${HOME}/.local/share/teleport
-rm ${HOME}/.config/systemd/teleport.service
+rm -rf "${HOME}/.config/teleport/*"
+rm -rf "${HOME}/.local/share/teleport"
+rm "${HOME}/.config/systemd/user/teleport.service"
 systemctl --user daemon-reload
 ```
 
@@ -360,7 +362,7 @@ teleport node configure \
     --data-dir=${HOME}/.local/share/teleport \
     --output=file://${HOME}/.config/teleport/teleport.yaml \
     --token=${HOME}/.config/teleport/teleport_token \
-    --proxy=teleport.yourdomain.com:443
+    --proxy=${TELEPORT_FQDN}:443
 ```
 
 ###### Start local Node
@@ -374,7 +376,7 @@ teleport start --config="${HOME}/.config/teleport/teleport.yaml"
 To setup `teleport` with `systemd` in `--user` space:
 
 ```shell
-cat > ${HOME}/.config/systemd/teleport.service << "EOF"
+cat > ${HOME}/.config/systemd/user/teleport.service << "EOF"
 [Unit]
 Description=Teleport Service
 After=network.target
