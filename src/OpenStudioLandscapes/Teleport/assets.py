@@ -1,6 +1,7 @@
 import copy
 import json
 import operator
+import os
 import pathlib
 import shlex
 import shutil
@@ -385,6 +386,11 @@ def static_apps(
 ) -> Generator[Output[List] | AssetMaterialization, None, None]:
     """ """
 
+    e_ = expand_dict_vars(
+            dict_to_expand=copy.deepcopy(os.environ),
+            kv=os.environ,
+        )
+
     static_apps_ = []
 
     publish_openstudiolandscapes_dagster = True
@@ -403,21 +409,23 @@ def static_apps(
 
         static_apps_.append(app_)
 
-    publish_openstudiolandscapes_harbor = True
+    # Todo
+    #  - [x] if get_bool_env(f"{os.environ['OPENSTUDIOLANDSCAPES__HARBOR_ENABLE']}".format(**os.environ)):
+    if e_["OPENSTUDIOLANDSCAPES__HARBOR_ENABLE"] == "True":
+        if e_["OPENSTUDIOLANDSCAPES__HARBOR_EXPOSE_IN_TELEPORT"] == "True":
 
-    if publish_openstudiolandscapes_harbor:
-        service = "openstudiolandscapes-harbor"
-        app_ = copy.deepcopy(app_dict_default)
-        app_["name"] = service
-        app_["uri"] = f"http://localhost:80/"
-        app_[
-            "public_addr"
-        ] = f"{service}.{SERVICE_NAME}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}"
-        app_["rewrite"]["redirect"].append(
-            f"{service}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}"
-        )
+            service = "openstudiolandscapes-harbor"
+            app_ = copy.deepcopy(app_dict_default)
+            app_["name"] = service
+            app_["uri"] = f"http://localhost:80/"
+            app_[
+                "public_addr"
+            ] = f"{service}.{SERVICE_NAME}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}"
+            app_["rewrite"]["redirect"].append(
+                f"{service}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}"
+            )
 
-        static_apps_.append(app_)
+            static_apps_.append(app_)
 
     # publish_openstudiolandscapes_pihole = False
     #
