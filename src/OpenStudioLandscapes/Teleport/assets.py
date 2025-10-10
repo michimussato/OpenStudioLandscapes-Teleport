@@ -143,7 +143,7 @@ def compose_networks(
 
 
 ins, feature_ins = get_dynamic_ins(
-    compose_scope_filter=FEATURES["OpenStudioLandscapes-Teleport"]["compose_scope"],
+    compose_scope_filter=[FEATURES["OpenStudioLandscapes-Teleport"]["compose_scope"]],
     imported_features=IMPORTED_FEATURES,
     operator=operator.ne,
 )

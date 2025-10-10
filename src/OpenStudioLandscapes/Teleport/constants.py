@@ -136,24 +136,8 @@ FEATURE_CONFIGS = {
             .as_posix(),
         }[FeatureVolumeType.SHARED],
         "static_apps": [
-            {
-                "service": "openstudiolandscapes-dagster",
-                "app_name": "%s",
-                "uri": "http://localhost:3000/",
-                "public_address": f"%s.{SERVICE_NAME}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}",
-                "rewrite_redirect": [
-                    f"%s.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}",
-                ],
-            },
-            {
-                "service": "openstudiolandscapes-harbor",
-                "app_name": "%s",
-                "uri": "http://localhost:80/",
-                "public_address": f"%s.{SERVICE_NAME}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}",
-                "rewrite_redirect": [
-                    f"%s.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}",
-                ],
-            },
+            # Todo:
+            #  - [ ] remove
         ],
         # Todo:
         #  - [x] find a dynamic way to fetch all services with the correct ports etc.
