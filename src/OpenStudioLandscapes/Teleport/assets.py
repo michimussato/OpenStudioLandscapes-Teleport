@@ -377,12 +377,20 @@ def app_dict_default(
         "app_dict_default": AssetIn(
             AssetKey([*ASSET_HEADER["key_prefix"], "app_dict_default"]),
         ),
+        "env": AssetIn(
+            AssetKey([*ASSET_HEADER["key_prefix"], "env"]),
+        ),
+        # "FEATURE_CONFIGS": AssetIn(
+        #     AssetKey([*ASSET_HEADER["key_prefix"], "FEATURE_CONFIGS"]),
+        # ),
     },
     description="",
 )
 def static_apps(
     context: AssetExecutionContext,
     app_dict_default: dict,  # pylint: disable=redefined-outer-name
+    env: dict,  # pylint: disable=redefined-outer-name
+    # FEATURE_CONFIGS:
 ) -> Generator[Output[List] | AssetMaterialization, None, None]:
     """ """
 
@@ -395,37 +403,49 @@ def static_apps(
 
     publish_openstudiolandscapes_dagster = True
 
-    if publish_openstudiolandscapes_dagster:
-        service = "openstudiolandscapes-dagster"
+    for _static_app in env["static_apps"]:
+        service = _static_app["service"]
         app_ = copy.deepcopy(app_dict_default)
-        app_["name"] = service
-        app_["uri"] = f"http://localhost:3000/"
-        app_[
-            "public_addr"
-        ] = f"{service}.{SERVICE_NAME}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}"
-        app_["rewrite"]["redirect"].append(
-            f"{service}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}"
+        app_["name"] = _static_app["app_name"] % service
+        app_["uri"] = _static_app["uri"]
+        app_["public_addr"] = _static_app["public_address"] % service
+        app_["rewrite"]["redirect"].extend(
+            [i % service for i in _static_app["rewrite_redirect"]]
         )
 
         static_apps_.append(app_)
 
-    # Todo
-    #  - [x] if get_bool_env(f"{os.environ['OPENSTUDIOLANDSCAPES__HARBOR_ENABLE']}".format(**os.environ)):
-    if e_["OPENSTUDIOLANDSCAPES__HARBOR_ENABLE"] == "True":
-        if e_["OPENSTUDIOLANDSCAPES__HARBOR_EXPOSE_IN_TELEPORT"] == "True":
-
-            service = "openstudiolandscapes-harbor"
-            app_ = copy.deepcopy(app_dict_default)
-            app_["name"] = service
-            app_["uri"] = f"http://localhost:80/"
-            app_[
-                "public_addr"
-            ] = f"{service}.{SERVICE_NAME}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}"
-            app_["rewrite"]["redirect"].append(
-                f"{service}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}"
-            )
-
-            static_apps_.append(app_)
+    # if publish_openstudiolandscapes_dagster:
+    #     service = "openstudiolandscapes-dagster"
+    #     app_ = copy.deepcopy(app_dict_default)
+    #     app_["name"] = service
+    #     app_["uri"] = "http://localhost:3000/"
+    #     app_[
+    #         "public_addr"
+    #     ] = f"{service}.{SERVICE_NAME}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}"
+    #     app_["rewrite"]["redirect"].append(
+    #         f"{service}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}"
+    #     )
+    #
+    #     static_apps_.append(app_)
+    #
+    # # Todo
+    # #  - [x] if get_bool_env(f"{os.environ['OPENSTUDIOLANDSCAPES__HARBOR_ENABLE']}".format(**os.environ)):
+    # if e_.get("OPENSTUDIOLANDSCAPES__HARBOR_ENABLE", "False") == "True":
+    #     if e_.get("OPENSTUDIOLANDSCAPES__HARBOR_EXPOSE_IN_TELEPORT", "False") == "True":
+    #
+    #         service = "openstudiolandscapes-harbor"
+    #         app_ = copy.deepcopy(app_dict_default)
+    #         app_["name"] = service
+    #         app_["uri"] = "http://localhost:80/"
+    #         app_[
+    #             "public_addr"
+    #         ] = f"{service}.{SERVICE_NAME}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_WAN').get_value()}"
+    #         app_["rewrite"]["redirect"].append(
+    #             f"{service}.{EnvVar('OPENSTUDIOLANDSCAPES__DOMAIN_LAN').get_value()}"
+    #         )
+    #
+    #         static_apps_.append(app_)
 
     # publish_openstudiolandscapes_pihole = False
     #
