@@ -395,9 +395,9 @@ def static_apps(
     """ """
 
     e_ = expand_dict_vars(
-            dict_to_expand=copy.deepcopy(os.environ),
-            kv=os.environ,
-        )
+        dict_to_expand=copy.deepcopy(os.environ),
+        kv=os.environ,
+    )
 
     static_apps_ = []
 

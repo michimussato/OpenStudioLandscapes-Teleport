@@ -193,6 +193,7 @@ The following variables are being declared in `OpenStudioLandscapes.Teleport.con
 | `TELEPORT_DATA`                                      | `str`                | `{DOT_LANDSCAPES}/{DOT_SHARED_VOLUMES}/Teleport__Teleport/volumes/data` |
 | `ACME_SH_DIR`                                        | `str`                | `{DOT_LANDSCAPES}/.acme.sh`                                             |
 | `TELEPORT_CERT`                                      | `str`                | `{DOT_LANDSCAPES}/.acme.sh/certs`                                       |
+| `static_apps`                                        | `list`               | `[]`                                                                    |
 
 # Community
 
@@ -203,7 +204,6 @@ The following variables are being declared in `OpenStudioLandscapes.Teleport.con
 | OpenStudioLandscapes-Dagster        | [https://github.com/michimussato/OpenStudioLandscapes-Dagster](https://github.com/michimussato/OpenStudioLandscapes-Dagster)               | [# openstudiolandscapes-dagster](https://discord.gg/jwB3DwmKvs)        |
 | OpenStudioLandscapes-Kitsu          | [https://github.com/michimussato/OpenStudioLandscapes-Kitsu](https://github.com/michimussato/OpenStudioLandscapes-Kitsu)                   | [# openstudiolandscapes-kitsu](https://discord.gg/6cc6mkReJ7)          |
 | OpenStudioLandscapes-RustDeskServer | [https://github.com/michimussato/OpenStudioLandscapes-RustDeskServer](https://github.com/michimussato/OpenStudioLandscapes-RustDeskServer) | [# openstudiolandscapes-rustdeskserver](https://discord.gg/nJ8Ffd2xY3) |
-| OpenStudioLandscapes-Teleport       | [https://github.com/michimussato/OpenStudioLandscapes-Teleport](https://github.com/michimussato/OpenStudioLandscapes-Teleport)             | [# openstudiolandscapes-teleport](https://discord.gg/SNMCw5aDfm)       |
 | OpenStudioLandscapes-Template       | [https://github.com/michimussato/OpenStudioLandscapes-Template](https://github.com/michimussato/OpenStudioLandscapes-Template)             | [# openstudiolandscapes-template](https://discord.gg/J59GYp3Wpy)       |
 | OpenStudioLandscapes-Twingate       | [https://github.com/michimussato/OpenStudioLandscapes-Twingate](https://github.com/michimussato/OpenStudioLandscapes-Twingate)             | [# openstudiolandscapes-twingate](https://discord.gg/tREYa6UNJf)       |
 
