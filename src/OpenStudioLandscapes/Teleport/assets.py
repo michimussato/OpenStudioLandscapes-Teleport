@@ -917,7 +917,7 @@ def compose_teleport(
             ]
         }
     elif "network_mode" in compose_networks:
-        network_dict = {"network_mode": compose_networks.get("network_mode")}
+        network_dict = {"network_mode": compose_networks["network_mode"]}
 
     teleport_data = pathlib.Path(env["TELEPORT_DATA"])
     teleport_data.mkdir(
@@ -975,7 +975,7 @@ def compose_teleport(
             SERVICE_NAME: {
                 "container_name": container_name,
                 "hostname": host_name,
-                "domainname": env.get("OPENSTUDIOLANDSCAPES__DOMAIN_LAN"),
+                "domainname": env["OPENSTUDIOLANDSCAPES__DOMAIN_LAN"],
                 # "mac_address": ":".join(re.findall(r"..", env["HOST_ID"])),
                 "restart": "always",
                 "image": env["DOCKER_IMAGE"],

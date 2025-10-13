@@ -12,14 +12,14 @@ Enter an OTP code from a device:
 $ tctl status
 > Profile URL:        https://teleport.openstudiolandscapes.cloud-ip.cc:443
   Logged in as:       admin
-  Cluster:            teleport.farm.evil
+  Cluster:            teleport.{os.environ.get('OPENSTUDIOLANDSCAPES__DOMAIN_LAN', 'openstudiolandscapes.lan')}
   Roles:              access, editor
   Logins:             root, ubuntu, ec2-user
   Kubernetes:         enabled
   Valid until:        2025-09-23 22:30:43 +0200 CEST [valid for 12h0m0s]
   Extensions:         login-ip, permit-agent-forwarding, permit-port-forwarding, permit-pty, private-key-policy
 
-Cluster: teleport.farm.evil
+Cluster: teleport.{os.environ.get('OPENSTUDIOLANDSCAPES__DOMAIN_LAN', 'openstudiolandscapes.lan')}
 Version: 18.2.0
 CA pins: sha256:7c1a3095c6be4478321f16a83d54bf2125fe8c060e43c5067066b99bab78b8d1
 
